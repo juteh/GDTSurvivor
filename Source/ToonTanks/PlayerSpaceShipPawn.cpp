@@ -7,6 +7,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -30,12 +32,14 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
 
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
+	AudioComponent->SetupAttachment(RootComponent);
+	AudioComponent->bAutoActivate = true;
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
@@ -71,6 +75,7 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 		FRotator NewRotation = CurrentVelocity.Rotation();
 		SetActorRotation(FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, RotationSpeed));
 	}
+
 }
 
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)

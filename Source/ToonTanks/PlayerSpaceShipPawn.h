@@ -25,9 +25,6 @@ public:
 	void MoveHorizontal(float Value);
 
 private:
-	bool IsMovingVertical = false;
-	bool IsMovingHorizontal = false;
-
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UCapsuleComponent* CapsuleComponent;
 
@@ -40,6 +37,10 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UCameraComponent* FollowCamera;
 
+	// Moving-Parameters
+
+	bool IsMovingVertical = false;
+	bool IsMovingHorizontal = false;
 
 	// increase speed over time until maxspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -58,4 +59,9 @@ private:
 	float RotationSpeed = 5.0f;
 
 	FVector CurrentVelocity;
+
+	// Sound-Parameters
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	class UAudioComponent* AudioComponent;
 };
