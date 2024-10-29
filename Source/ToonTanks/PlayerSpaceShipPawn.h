@@ -25,6 +25,9 @@ public:
 	void MoveHorizontal(float Value);
 
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* RootSceneComponent;
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UCapsuleComponent* CapsuleComponent;
 
@@ -50,7 +53,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float Deceleration = 500.0f;
 
-	// limit fpr acceleration
+	// limit for acceleration
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float MaxSpeed = 1000.0f;
 
