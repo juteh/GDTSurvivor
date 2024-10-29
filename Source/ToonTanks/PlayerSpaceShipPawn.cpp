@@ -8,7 +8,6 @@
 #include "Components/InputComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/AudioComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
 // Sets default values
@@ -17,29 +16,30 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
-	//RootComponent = RootSceneComponent;
-
+	// set CaspuleCollide for RootComponent of blueprint
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollisionComponent"));
 	RootComponent = CapsuleComponent;
-	//CapsuleComponent->SetupAttachment(RootComponent);
-	//CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//CapsuleComponent->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
-	//CapsuleComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 
+	// Add and attach Mesh of SpaceShip to CapsuleCollision 
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
 	SpaceshipMesh->SetupAttachment(CapsuleComponent);
 
+	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(CapsuleComponent);
-	CameraBoom->TargetArmLength = 500.0f;
+	CameraBoom->TargetArmLength = 1500.0f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
 
+	// create background-music and activate
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->SetupAttachment(RootComponent);
 	AudioComponent->bAutoActivate = true;
+
+	// create spawnpoint for projectile
+	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
+	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
@@ -54,6 +54,7 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 	// if no keys are pressed, reduce speed over time
 	if (!IsMovingVertical && !IsMovingHorizontal)
 	{
+		// ensures that the vector is only normalised if its length is greater than 0. If the vector has a length of 0, a zero vector is simply returned.
 		FVector DecelerationVector = -CurrentVelocity.GetSafeNormal() * Deceleration * DeltaTime;
 		
 		// stop movement
@@ -70,18 +71,16 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 
 	CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
 
-
-
+	// CurrentVelocity set new location and CurrentVelocity changed while using inputs in MoveVertical() and MoveHorizontal()
+	FVector NewLocation = GetActorLocation() + (CurrentVelocity * DeltaTime);
+	// true -> use collision
+	SetActorLocation(NewLocation, true);
+	
 	// Rotation of SpaceShip 
 	if (!CurrentVelocity.IsNearlyZero()) {
 		FRotator NewRotation = CurrentVelocity.Rotation();
 		SetActorRotation(FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, RotationSpeed));
 	}
-	
-	// CurrentVelocity set new location and CurrentVelocity changed while using inputs in MoveVertical() and MoveHorizontal()
-	FVector NewLocation = GetActorLocation() + (CurrentVelocity * DeltaTime);
-	// true -> use collision
-	SetActorLocation(NewLocation, true);
 }
 
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
@@ -90,6 +89,8 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MoveVertical);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::MoveHorizontal);
+	// IE_Pressed -> how the fire-button is used e.g pressed or released
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::FireProjectile);
 }
 
 void APlayerSpaceShipPawn::MoveVertical(float Value)
@@ -99,16 +100,6 @@ void APlayerSpaceShipPawn::MoveVertical(float Value)
 		FVector Direction = FVector(1, 0, 0);
 		CurrentVelocity += Direction * Value * Acceleration * GetWorld()->GetDeltaSeconds();
 		IsMovingVertical = true;
-		//float DeltaTime = UGameplayStatics::GetWorldDeltaSeconds(this);
-		//FVector DeltaLocation = FVector::ZeroVector;
-		//DeltaLocation.X = Value * DeltaTime * Acceleration;
-		// true -> use collision
-		//AddActorLocalOffset(DeltaLocation, true);
-
-		
-		//FRotator DeltaRotation = FRotator::ZeroRotator;
-		//DeltaRotation.Yaw = Value * RotationSpeed * DeltaTime;
-		//AddActorLocalRotation(DeltaRotation, true);
 	}
 	else
 	{
@@ -123,18 +114,26 @@ void APlayerSpaceShipPawn::MoveHorizontal(float Value)
 		FVector Direction = FVector(0, 1, 0);
 		CurrentVelocity += Direction * Value * Acceleration * GetWorld()->GetDeltaSeconds();
 		IsMovingHorizontal = true;
-		//float DeltaTime = UGameplayStatics::GetWorldDeltaSeconds(this);
-		//FVector DeltaLocation = FVector::ZeroVector;
-		//DeltaLocation.Y = Value * DeltaTime * Acceleration;
-		// true -> use collision
-		//AddActorLocalOffset(DeltaLocation, true);
-
-		//FRotator DeltaRotation = FRotator::ZeroRotator;
-		//DeltaRotation.Yaw = Value * RotationSpeed * DeltaTime;
-		//AddActorLocalRotation(DeltaRotation, true);
 	}
 	else
 	{
 		IsMovingHorizontal = false;
+	}
+}
+
+void APlayerSpaceShipPawn::FireProjectile()
+{
+	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
+	if (ProjectileActorClass) {
+		const FVector SpawnLocation = ProjectileSpawnPoint->GetComponentLocation();
+		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
+
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		// can also be zero but useful to define an originator e.g. for events to see who fired the projectile
+		SpawnParameters.Instigator = GetInstigator();
+
+		// create BP_Projectile
+		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 	}
 }

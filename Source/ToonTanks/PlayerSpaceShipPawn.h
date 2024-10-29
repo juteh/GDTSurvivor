@@ -23,6 +23,7 @@ public:
 
 	void MoveVertical(float Value);
 	void MoveHorizontal(float Value);
+	void FireProjectile();
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -47,7 +48,7 @@ private:
 
 	// increase speed over time until maxspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float Acceleration = 2000.0f;
+	float Acceleration = 10000.0f;
 
 	// reduce speed while no movement-keys are pressed until zero
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -67,4 +68,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UAudioComponent* AudioComponent;
+
+	// to use this we have to set in BP_PlayerSpaceShipPawn under ClassDefaults of ProjectileActorClass the Blueprint BP_Projectile
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<AActor> ProjectileActorClass;
+
+	// spawnpoint for projectile
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* ProjectileSpawnPoint;
 };
