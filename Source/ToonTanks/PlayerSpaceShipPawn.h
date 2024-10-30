@@ -23,6 +23,8 @@ public:
 
 	void MoveVertical(float Value);
 	void MoveHorizontal(float Value);
+	void StartFire();
+	void StopFire();
 	void FireProjectile();
 
 private:
@@ -73,7 +75,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AActor> ProjectileActorClass;
 
+	// combat
+	
 	// spawnpoint for projectile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* ProjectileSpawnPoint;
+
+	FTimerHandle FireRateTimerHandle;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float FireRate = 0.2f;
 };
