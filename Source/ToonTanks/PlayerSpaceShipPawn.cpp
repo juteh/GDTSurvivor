@@ -90,7 +90,8 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MoveVertical);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::MoveHorizontal);
 	// IE_Pressed -> how the fire-button is used e.g pressed or released
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::FireProjectile);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
 
 void APlayerSpaceShipPawn::MoveVertical(float Value)
@@ -119,6 +120,16 @@ void APlayerSpaceShipPawn::MoveHorizontal(float Value)
 	{
 		IsMovingHorizontal = false;
 	}
+}
+
+void APlayerSpaceShipPawn::StartFire()
+{
+	GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APlayerSpaceShipPawn::FireProjectile, FireRate, true, 0.0f);
+}
+
+void APlayerSpaceShipPawn::StopFire()
+{
+	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
 }
 
 void APlayerSpaceShipPawn::FireProjectile()
