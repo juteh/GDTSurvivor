@@ -81,6 +81,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* ProjectileSpawnPoint;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* LaserShotSound;
+
 	FTimerHandle FireRateTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
