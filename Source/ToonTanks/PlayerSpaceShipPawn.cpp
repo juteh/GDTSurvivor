@@ -8,6 +8,7 @@
 #include "Components/InputComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
 // Sets default values
@@ -146,5 +147,11 @@ void APlayerSpaceShipPawn::FireProjectile()
 
 		// create BP_Projectile
 		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+
+		if (SpawnedProjectile && LaserShotSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+
+		}
 	}
 }
