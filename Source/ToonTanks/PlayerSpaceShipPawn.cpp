@@ -151,7 +151,14 @@ void APlayerSpaceShipPawn::FireProjectile()
 		if (SpawnedProjectile && LaserShotSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
-
 		}
+	}
+}
+
+void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor)
+{
+	if (HitActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetName());
 	}
 }

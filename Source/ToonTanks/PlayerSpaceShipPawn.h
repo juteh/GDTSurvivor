@@ -14,6 +14,9 @@ class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 public:
 	APlayerSpaceShipPawn();
 
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void HandleProjectileHit(AActor* HitActor);
+
 protected:
 	virtual void BeginPlay() override;
 
