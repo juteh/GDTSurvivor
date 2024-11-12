@@ -32,7 +32,7 @@ private:
 	class USceneComponent* RootSceneComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UCapsuleComponent* CapsuleComponent;
+	class UBoxComponent* BoxComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UStaticMeshComponent* SpaceshipMesh;
@@ -77,7 +77,7 @@ private:
 
 	// combat
 	
-	// spawnpoint for projectile
+	// spawn point for projectile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* ProjectileSpawnPoint;
 

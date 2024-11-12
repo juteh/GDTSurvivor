@@ -6,7 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
-#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -17,17 +17,17 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// set CaspuleCollide for RootComponent of blueprint
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollisionComponent"));
-	RootComponent = CapsuleComponent;
+	// set BoxCollider for RootComponent of blueprint
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollisionComponent"));
+	RootComponent = BoxComponent;
 
 	// Add and attach Mesh of SpaceShip to CapsuleCollision 
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
-	SpaceshipMesh->SetupAttachment(CapsuleComponent);
+	SpaceshipMesh->SetupAttachment(BoxComponent);
 
 	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(CapsuleComponent);
+	CameraBoom->SetupAttachment(BoxComponent);
 	CameraBoom->TargetArmLength = 1500.0f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -38,7 +38,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	AudioComponent->SetupAttachment(RootComponent);
 	AudioComponent->bAutoActivate = true;
 
-	// create spawnpoint for projectile
+	// create spawn point for projectile
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
 }
@@ -90,7 +90,7 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MoveVertical);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::MoveHorizontal);
-	// IE_Pressed -> how the fire-button is used e.g pressed or released
+	// IE_Pressed -> how the fire-button is used e.g. pressed or released
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
