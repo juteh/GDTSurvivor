@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "PlayerSpaceShipPawn.generated.h"
 
+
 UCLASS()
 class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 {
@@ -13,9 +14,11 @@ class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 
 public:
 	APlayerSpaceShipPawn();
+	void BeginThrusterFX();
 
 protected:
 	virtual void BeginPlay() override;
+	void tickThrusterFX(float DeltaTime);
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -31,8 +34,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootSceneComponent;
 
+
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UCapsuleComponent* CapsuleComponent;
+	class UBoxComponent* BoxComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UStaticMeshComponent* SpaceshipMesh;
@@ -74,10 +78,10 @@ private:
 	// to use this we have to set in BP_PlayerSpaceShipPawn under ClassDefaults of ProjectileActorClass the Blueprint BP_Projectile
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AActor> ProjectileActorClass;
-
+	
 	// combat
 	
-	// spawnpoint for projectile
+	// spawn point for projectile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* ProjectileSpawnPoint;
 
@@ -88,4 +92,15 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRate = 0.2f;
+	
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* NiagaraSceneComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraSystem* thrusterFXNiagaraSystem;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* thrusterFXNiagaraComponent;
+	
 };
