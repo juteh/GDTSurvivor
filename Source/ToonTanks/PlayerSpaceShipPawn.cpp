@@ -27,11 +27,6 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// Add and attach Mesh of SpaceShip to CapsuleCollision 
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
 	SpaceshipMesh->SetupAttachment(BoxComponent);
-
-	//BeamParticles = CreateDefaultSubobject<UNiagaraComponent>("TractorBeamParticles");
-	//BeamParticles->SetupAttachment(BoxComponent);
-	//thrusterFXLeft = CreateDefaultSubobject<UNiagaraSystem>("ThrusterFXLeft");
-	//thrusterFXLeft->SetupAttachment(BoxComponent);
 	
 	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
