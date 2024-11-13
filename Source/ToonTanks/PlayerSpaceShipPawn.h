@@ -14,9 +14,11 @@ class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 
 public:
 	APlayerSpaceShipPawn();
+	void BeginThrusterFX();
 
 protected:
 	virtual void BeginPlay() override;
+	void tickThrusterFX(float DeltaTime);
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -95,10 +97,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* NiagaraSceneComp;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UNiagaraSystem* thrusterFXLeft;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UNiagaraComponent* NiagaraComp;
 	
 };

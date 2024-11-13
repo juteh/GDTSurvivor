@@ -33,7 +33,6 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	//thrusterFXLeft = CreateDefaultSubobject<UNiagaraSystem>("ThrusterFXLeft");
 	//thrusterFXLeft->SetupAttachment(BoxComponent);
 	
-	
 	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(BoxComponent);
@@ -56,15 +55,31 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
 }
 
-void APlayerSpaceShipPawn::BeginPlay()
+void APlayerSpaceShipPawn::BeginThrusterFX()
 {
-	Super::BeginPlay();
-	
 	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
 	thrusterFXLeft = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
 	NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXLeft,  this->RootComponent, NAME_None, FVector(-80.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
 
+	NiagaraComp->InitializeSystem();
+	NiagaraComp->Activate(true);
+}
+
+void APlayerSpaceShipPawn::BeginPlay()
+{
+	Super::BeginPlay();
 	
+	BeginThrusterFX();
+}
+
+void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
+{
+	float thrusterFXStrength = (this->CurrentVelocity * DeltaTime).Length() / this->MaxSpeed * 100.f;
+	NiagaraComp->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
+	NiagaraComp->SetFloatParameter(FName("Smoke_Drag"), thrusterFXStrength);
+	
+//	FString FormattedText = FString::Printf(TEXT("thrusterFXStrength: %f"), thrusterFXStrength);
+//	GEngine->AddOnScreenDebugMessage(-1,10.f,FColor::Red, FormattedText);
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
@@ -91,6 +106,8 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 
 	CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
 
+	tickThrusterFX(DeltaTime);
+	
 	// CurrentVelocity set new location and CurrentVelocity changed while using inputs in MoveVertical() and MoveHorizontal()
 	FVector NewLocation = GetActorLocation() + (CurrentVelocity * DeltaTime);
 	// true -> use collision
