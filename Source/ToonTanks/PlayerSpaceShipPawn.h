@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "PlayerSpaceShipPawn.generated.h"
 
+
 UCLASS()
 class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 {
@@ -30,6 +31,7 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootSceneComponent;
+
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UBoxComponent* BoxComponent;
@@ -74,7 +76,7 @@ private:
 	// to use this we have to set in BP_PlayerSpaceShipPawn under ClassDefaults of ProjectileActorClass the Blueprint BP_Projectile
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AActor> ProjectileActorClass;
-
+	
 	// combat
 	
 	// spawn point for projectile
@@ -88,4 +90,15 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRate = 0.2f;
+	
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* NiagaraSceneComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraSystem* thrusterFXLeft;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* NiagaraComp;
+	
 };

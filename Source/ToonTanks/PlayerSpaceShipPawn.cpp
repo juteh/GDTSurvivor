@@ -10,6 +10,9 @@
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Niagara/Public/NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -25,6 +28,14 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
 	SpaceshipMesh->SetupAttachment(BoxComponent);
 
+//	BeamParticles = CreateDefaultSubobject<UNiagaraComponent>("TractorBeamParticles");
+//	BeamParticles->SetupAttachment(BoxComponent);
+
+	//thrusterFXLeft = CreateDefaultSubobject<UNiagaraSystem>("ThrusterFXLeft");
+	    
+	//thrusterFXLeft->SetupAttachment(BoxComponent);
+	
+	
 	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(BoxComponent);
@@ -33,6 +44,10 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
 
+	// create thruster fx
+	NiagaraSceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("ThrusterFXPoint"));
+	NiagaraSceneComp->SetupAttachment(SpaceshipMesh);
+	
 	// create background-music and activate
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->SetupAttachment(RootComponent);
@@ -46,6 +61,10 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 void APlayerSpaceShipPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	thrusterFXLeft = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+	NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXLeft,  this->RootComponent, NAME_None, FVector(0.f,0.f,400.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, true);
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
