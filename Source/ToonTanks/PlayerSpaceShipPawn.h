@@ -98,9 +98,9 @@ private:
 	class USceneComponent* NiagaraSceneComp;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraSystem* thrusterFXLeft;
+	class UNiagaraSystem* thrusterFXNiagaraSystem;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* NiagaraComp;
+	class UNiagaraComponent* thrusterFXNiagaraComponent;
 	
 };

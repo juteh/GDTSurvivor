@@ -58,11 +58,11 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
 	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
-	thrusterFXLeft = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-	NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXLeft,  this->RootComponent, NAME_None, FVector(-80.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
+	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXNiagaraSystem,  this->RootComponent, NAME_None, FVector(-50.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
 
-	NiagaraComp->InitializeSystem();
-	NiagaraComp->Activate(true);
+	thrusterFXNiagaraComponent->InitializeSystem();
+	thrusterFXNiagaraComponent->Activate(true);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
@@ -74,12 +74,15 @@ void APlayerSpaceShipPawn::BeginPlay()
 
 void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
 {
-	float thrusterFXStrength = (this->CurrentVelocity * DeltaTime).Length() / this->MaxSpeed * 100.f;
-	NiagaraComp->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
-	NiagaraComp->SetFloatParameter(FName("Smoke_Drag"), thrusterFXStrength);
+	const float boosterScaleFactor = 100.f;
+	const float heatHazeScaleFactor = 10.f;
 	
-//	FString FormattedText = FString::Printf(TEXT("thrusterFXStrength: %f"), thrusterFXStrength);
-//	GEngine->AddOnScreenDebugMessage(-1,10.f,FColor::Red, FormattedText);
+	float thrusterFXStrength = (this->CurrentVelocity * DeltaTime).Length() / this->MaxSpeed * boosterScaleFactor;
+	thrusterFXStrength = FMath::Clamp(thrusterFXStrength, 0.f, 1.f);
+	
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), thrusterFXStrength);
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), thrusterFXStrength * heatHazeScaleFactor);
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
