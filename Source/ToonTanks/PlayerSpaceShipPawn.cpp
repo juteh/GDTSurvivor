@@ -62,7 +62,9 @@ void APlayerSpaceShipPawn::BeginPlay()
 	
 	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
 	thrusterFXLeft = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-	NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXLeft,  this->RootComponent, NAME_None, FVector(-80.f,00.f,0.f), FRotator(0,180,00.f), EAttachLocation::Type::KeepRelativeOffset, true);
+	NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXLeft,  this->RootComponent, NAME_None, FVector(-80.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
+
+	
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
