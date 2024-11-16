@@ -146,19 +146,32 @@ void APlayerSpaceShipPawn::FireProjectile()
 		SpawnParameters.Instigator = GetInstigator();
 
 		// create BP_Projectile
-		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-
-		if (SpawnedProjectile && LaserShotSound)
+		AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+		
+		if (SpawnedProjectile)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+			OnProjectileCreate(SpawnedProjectile);
+			if (LaserShotSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+			}
 		}
 	}
 }
 
-void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor)
+void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor)
 {
 	if (HitActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetName());
+		// TODO: Mit Tags arbeiten
+		// HitActor->ActorHasTag()
+		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetActorLabel());
+		if (ProjectileActor)
+		{
+			if (HitActor->ActorHasTag("level"))
+			{
+				OnProjectileDestroy(ProjectileActor, HitActor);
+			}
+		}
 	}
 }
