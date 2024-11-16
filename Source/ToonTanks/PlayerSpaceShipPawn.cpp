@@ -6,10 +6,13 @@
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
-#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Niagara/Public/NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -17,35 +20,64 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// set CaspuleCollide for RootComponent of blueprint
-	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollisionComponent"));
-	RootComponent = CapsuleComponent;
+	// set BoxCollider for RootComponent of blueprint
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollisionComponent"));
+	RootComponent = BoxComponent;
 
 	// Add and attach Mesh of SpaceShip to CapsuleCollision 
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
-	SpaceshipMesh->SetupAttachment(CapsuleComponent);
-
+	SpaceshipMesh->SetupAttachment(BoxComponent);
+	
 	// create camera attached to SpringArm
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(CapsuleComponent);
+	CameraBoom->SetupAttachment(BoxComponent);
 	CameraBoom->TargetArmLength = 1500.0f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
 
+	// create thruster fx
+	NiagaraSceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("ThrusterFXPoint"));
+	NiagaraSceneComp->SetupAttachment(SpaceshipMesh);
+	
 	// create background-music and activate
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->SetupAttachment(RootComponent);
 	AudioComponent->bAutoActivate = true;
 
-	// create spawnpoint for projectile
+	// create spawn point for projectile
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
+}
+
+void APlayerSpaceShipPawn::BeginThrusterFX()
+{
+	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXNiagaraSystem,  this->RootComponent, NAME_None, FVector(-50.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
+
+	thrusterFXNiagaraComponent->InitializeSystem();
+	thrusterFXNiagaraComponent->Activate(true);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	BeginThrusterFX();
+}
+
+void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
+{
+	const float boosterScaleFactor = 100.f;
+	const float heatHazeScaleFactor = 10.f;
+	
+	float thrusterFXStrength = (this->CurrentVelocity * DeltaTime).Length() / this->MaxSpeed * boosterScaleFactor;
+	thrusterFXStrength = FMath::Clamp(thrusterFXStrength, 0.f, 1.f);
+	
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), thrusterFXStrength);
+	thrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), thrusterFXStrength * heatHazeScaleFactor);
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
@@ -72,6 +104,8 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 
 	CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
 
+	tickThrusterFX(DeltaTime);
+	
 	// CurrentVelocity set new location and CurrentVelocity changed while using inputs in MoveVertical() and MoveHorizontal()
 	FVector NewLocation = GetActorLocation() + (CurrentVelocity * DeltaTime);
 	// true -> use collision
@@ -90,7 +124,7 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MoveVertical);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::MoveHorizontal);
-	// IE_Pressed -> how the fire-button is used e.g pressed or released
+	// IE_Pressed -> how the fire-button is used e.g. pressed or released
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
