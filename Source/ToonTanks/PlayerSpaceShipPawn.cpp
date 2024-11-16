@@ -200,7 +200,7 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* 
 		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetActorLabel());
 		if (ProjectileActor)
 		{
-			if (HitActor->ActorHasTag("level"))
+			if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy"))
 			{
 				OnProjectileDestroy(ProjectileActor, HitActor);
 			}
