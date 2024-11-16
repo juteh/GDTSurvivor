@@ -197,8 +197,6 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* 
 {
 	if (HitActor)
 	{
-		// TODO: Mit Tags arbeiten
-		// HitActor->ActorHasTag()
 		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetActorLabel());
 		if (ProjectileActor)
 		{
