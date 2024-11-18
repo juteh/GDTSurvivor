@@ -52,7 +52,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
-	FString NiagaraPath = "/Game/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	FString NiagaraPath = "/Game/GDTSurvivor/Effects/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
 	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
 	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXNiagaraSystem,  this->RootComponent, NAME_None, FVector(-50.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
 
@@ -180,12 +180,30 @@ void APlayerSpaceShipPawn::FireProjectile()
 		SpawnParameters.Instigator = GetInstigator();
 
 		// create BP_Projectile
-		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-
-		if (SpawnedProjectile && LaserShotSound)
+		AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+		
+		if (SpawnedProjectile)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+			OnProjectileCreate(SpawnedProjectile);
+			if (LaserShotSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+			}
+		}
+	}
+}
 
+void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor)
+{
+	if (HitActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetActorLabel());
+		if (ProjectileActor)
+		{
+			if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy"))
+			{
+				OnProjectileDestroy(ProjectileActor, HitActor);
+			}
 		}
 	}
 }

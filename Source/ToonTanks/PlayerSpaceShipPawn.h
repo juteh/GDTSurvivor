@@ -16,6 +16,17 @@ public:
 	APlayerSpaceShipPawn();
 	void BeginThrusterFX();
 
+	// Functions in EventGraph
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
+	void OnProjectileCreate(AActor* ProjectileActor);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
+	void OnProjectileDestroy(AActor* ProjectileActor, AActor* HitActor);
+
 protected:
 	virtual void BeginPlay() override;
 	void tickThrusterFX(float DeltaTime);
