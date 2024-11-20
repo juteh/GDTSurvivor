@@ -22,9 +22,6 @@ public:
 	void HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor);
 	
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
-	void OnProjectileCreate(AActor* ProjectileActor);
-	
-	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
 	void OnProjectileDestroy(AActor* ProjectileActor, AActor* HitActor);
 
 protected:

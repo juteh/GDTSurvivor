@@ -170,7 +170,8 @@ void APlayerSpaceShipPawn::StopFire()
 void APlayerSpaceShipPawn::FireProjectile()
 {
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
-	if (ProjectileActorClass) {
+	if (ProjectileActorClass)
+	{
 		const FVector SpawnLocation = ProjectileSpawnPoint->GetComponentLocation();
 		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
 
@@ -180,11 +181,10 @@ void APlayerSpaceShipPawn::FireProjectile()
 		SpawnParameters.Instigator = GetInstigator();
 
 		// create BP_Projectile
-		AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 		
 		if (SpawnedProjectile)
 		{
-			OnProjectileCreate(SpawnedProjectile);
 			if (LaserShotSound)
 			{
 				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
@@ -195,15 +195,8 @@ void APlayerSpaceShipPawn::FireProjectile()
 
 void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor)
 {
-	if (HitActor)
+	if (HitActor && ProjectileActor && (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy")))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Projectile hit Actor %s"), *HitActor->GetActorLabel());
-		if (ProjectileActor)
-		{
-			if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy"))
-			{
-				OnProjectileDestroy(ProjectileActor, HitActor);
-			}
-		}
+		OnProjectileDestroy(ProjectileActor, HitActor);
 	}
 }
