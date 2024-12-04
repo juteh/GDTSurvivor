@@ -52,7 +52,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
-	FString NiagaraPath = "/Game/GDTSurvivor/Effects/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
 	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
 	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXNiagaraSystem,  this->RootComponent, NAME_None, FVector(-50.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
 
