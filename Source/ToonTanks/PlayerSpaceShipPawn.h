@@ -19,10 +19,7 @@ public:
 	// Functions in EventGraph
 	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor);
-	
-	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
-	void OnProjectileDestroy(AActor* ProjectileActor, AActor* HitActor);
+	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
 protected:
 	virtual void BeginPlay() override;
