@@ -19,13 +19,11 @@ public:
 	// Functions in EventGraph
 	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor);
-	
-	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
-	void OnProjectileDestroy(AActor* ProjectileActor, AActor* HitActor);
+	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
 protected:
 	virtual void BeginPlay() override;
+	
 	void tickThrusterFX(float DeltaTime);
 
 public:
@@ -38,6 +36,8 @@ public:
 	void StopFire();
 	void FireProjectile();
 
+	
+	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootSceneComponent;
