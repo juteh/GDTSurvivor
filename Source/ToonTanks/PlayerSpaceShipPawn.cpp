@@ -193,10 +193,44 @@ void APlayerSpaceShipPawn::FireProjectile()
 	}
 }
 
-void APlayerSpaceShipPawn::HandleProjectileHit(AActor* ProjectileActor, AActor* HitActor)
+void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor)
 {
-	if (HitActor && ProjectileActor && (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy")))
+	if (HitActor && ProjectileActor)
 	{
-		OnProjectileDestroy(ProjectileActor, HitActor);
+		// find blueprints of asteroids by name
+		FString ClassName = HitActor->GetClass()->GetName();
+		if (ClassName.StartsWith(TEXT("BP_AsteroidsActor")))
+		{
+			FName EventName = FName("DestroyAsteroid");
+			if (HitActor->FindFunction(EventName))
+			{
+				// trigger external event "DestroyAsteroid" of BP_AsteroidsActor
+				// GLog -> standard logger for debugging by errors while event is triggered
+				// bForceCallWithNonExec = true -> trigger the event regardless of whether it is private
+				// function only works if event don't need parameters! Alternative use function ProcessEvent
+				HitActor->CallFunctionByNameWithArguments(*EventName.ToString(), *GLog, nullptr, true);
+			}
+		}
+
+		if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
+		{
+			FString NiagaraPath = "/Game/GDTSurvivor/Core/Projectile/NS_Projectile_Hit.NS_Projectile_Hit";
+			UNiagaraSystem* NiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+
+			// spawn explosion effect of projectile
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				NiagaraSystem,
+				ProjectileActor->GetActorLocation(),
+				FRotator::ZeroRotator,
+				FVector(1.0f),
+				true
+			);
+			
+			ProjectileActor->Destroy();
+		}
+	} else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
 	}
 }

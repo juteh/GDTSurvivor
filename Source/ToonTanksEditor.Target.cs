@@ -9,7 +9,8 @@ public class ToonTanksEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
-
+		// just for safety. To build always the newswest code
+		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		ExtraModuleNames.AddRange( new string[] { "ToonTanks" } );
 	}
 }
