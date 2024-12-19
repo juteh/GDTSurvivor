@@ -23,6 +23,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	
 	void tickThrusterFX(float DeltaTime);
 
 public:
@@ -35,6 +36,8 @@ public:
 	void StopFire();
 	void FireProjectile();
 
+	
+	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootSceneComponent;

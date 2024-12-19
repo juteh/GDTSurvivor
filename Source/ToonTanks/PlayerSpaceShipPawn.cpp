@@ -48,6 +48,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// create spawn point for projectile
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
+
 }
 
 void APlayerSpaceShipPawn::BeginThrusterFX()
@@ -65,6 +66,8 @@ void APlayerSpaceShipPawn::BeginPlay()
 	Super::BeginPlay();
 	
 	BeginThrusterFX();
+	
+
 }
 
 void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
@@ -176,7 +179,7 @@ void APlayerSpaceShipPawn::FireProjectile()
 		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
 
 		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Owner = this;
+		SpawnParameters.Owner = this;	
 		// can also be zero but useful to define an originator e.g. for events to see who fired the projectile
 		SpawnParameters.Instigator = GetInstigator();
 
@@ -192,6 +195,7 @@ void APlayerSpaceShipPawn::FireProjectile()
 		}
 	}
 }
+
 
 void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor)
 {
