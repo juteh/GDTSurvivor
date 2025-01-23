@@ -77,3 +77,7 @@ Content/GDTSurvivor/Developer/*
 .vsconfig
 .idea/*
 lfs/
+hooks/post-checkout
+hooks/post-commit
+hooks/post-merge
+hooks/pre-push
