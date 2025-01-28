@@ -134,6 +134,7 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 
 void APlayerSpaceShipPawn::MoveVertical(float Value)
 {
+	/**
 	if (Value != 0.0f)
 	{
 		FVector Direction = FVector(1, 0, 0);
@@ -144,10 +145,22 @@ void APlayerSpaceShipPawn::MoveVertical(float Value)
 	{
 		IsMovingVertical = false;
 	}
+	**/
+	UE_LOG(LogTemp, Display, TEXT("Move Vertical %f"), Value);
+	if (Value != 0.0f)
+	{
+		// Einmaliger Impuls statt kontinuierlicher Beschleunigung
+		FVector Impulse = GetActorForwardVector() * ThrustForce;
+		CurrentVelocity += Impulse;
+        
+		// Maximale Geschwindigkeit begrenzen
+		CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
+	}
 }
 
 void APlayerSpaceShipPawn::MoveHorizontal(float Value)
 {
+	/**
 	if (Value != 0.0f)
 	{
 		FVector Direction = FVector(0, 1, 0);
@@ -157,6 +170,13 @@ void APlayerSpaceShipPawn::MoveHorizontal(float Value)
 	else
 	{
 		IsMovingHorizontal = false;
+	}
+	**/
+	UE_LOG(LogTemp, Display, TEXT("Moving Horizontal %f"), Value);
+	if (Value != 0.0f)
+	{
+		// Rotiere um Z-Achse
+		AddActorLocalRotation(FRotator(0, RotationSpeed * Value * GetWorld()->GetDeltaSeconds(), 0));
 	}
 }
 
@@ -238,3 +258,26 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* Project
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
 	}
 }
+/**
+void APlayerSpaceShipPawn::MoveForward(float Value)
+{
+	if (Value != 0.0f)
+	{
+		// Einmaliger Impuls statt kontinuierlicher Beschleunigung
+		FVector Impulse = GetActorForwardVector() * ThrustForce;
+		CurrentVelocity += Impulse;
+        
+		// Maximale Geschwindigkeit begrenzen
+		CurrentVelocity = FMath::ClampVector(CurrentVelocity, -MaxSpeed, MaxSpeed);
+	}
+}
+
+void APlayerSpaceShipPawn::RotateShip(float Value)
+{
+	if (Value != 0.0f)
+	{
+		// Rotiere um Z-Achse
+		AddActorLocalRotation(FRotator(0, RotationSpeed * Value * GetWorld()->GetDeltaSeconds(), 0));
+	}
+}
+**/

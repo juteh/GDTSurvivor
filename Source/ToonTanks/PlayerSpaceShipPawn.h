@@ -76,6 +76,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float RotationSpeed = 5.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float ThrustForce = 50.0f;
+
 	FVector CurrentVelocity;
 
 	// Sound-Parameters
