@@ -67,7 +67,6 @@ void APlayerSpaceShipPawn::BeginPlay()
 	
 	BeginThrusterFX();
 	
-
 }
 
 void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
@@ -87,97 +86,33 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// if no keys are pressed, reduce speed over time
-	if (!IsMovingVertical && !IsMovingHorizontal)
-	{
-		// ensures that the vector is only normalised if its length is greater than 0. If the vector has a length of 0, a zero vector is simply returned.
-		FVector DecelerationVector = -CurrentVelocity.GetSafeNormal() * Deceleration * DeltaTime;
-		
-		// stop movement
-		if (DecelerationVector.Size() > CurrentVelocity.Size())
-		{
-			CurrentVelocity = FVector::ZeroVector;
-		}
-		// reduce speed
-		else
-		{
-			CurrentVelocity += DecelerationVector;
-		}
-	}
-
-	CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
-
 	tickThrusterFX(DeltaTime);
 	
-	// CurrentVelocity set new location and CurrentVelocity changed while using inputs in MoveVertical() and MoveHorizontal()
-	FVector NewLocation = GetActorLocation() + (CurrentVelocity * DeltaTime);
-	// true -> use collision
-	SetActorLocation(NewLocation, true);
-	
-	// Rotation of SpaceShip 
-	if (!CurrentVelocity.IsNearlyZero()) {
-		FRotator NewRotation = CurrentVelocity.Rotation();
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, RotationSpeed));
-	}
 }
 
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MoveVertical);
-	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::MoveHorizontal);
+	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MovePlayer);
+	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::RotatePlayer);
 	// IE_Pressed -> how the fire-button is used e.g. pressed or released
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
 
-void APlayerSpaceShipPawn::MoveVertical(float Value)
+void APlayerSpaceShipPawn::MovePlayer(float Value)
 {
-	/**
-	if (Value != 0.0f)
-	{
-		FVector Direction = FVector(1, 0, 0);
-		CurrentVelocity += Direction * Value * Acceleration * GetWorld()->GetDeltaSeconds();
-		IsMovingVertical = true;
-	}
-	else
-	{
-		IsMovingVertical = false;
-	}
-	**/
-	UE_LOG(LogTemp, Display, TEXT("Move Vertical %f"), Value);
-	if (Value != 0.0f)
-	{
-		// Einmaliger Impuls statt kontinuierlicher Beschleunigung
-		FVector Impulse = GetActorForwardVector() * ThrustForce;
-		CurrentVelocity += Impulse;
-        
-		// Maximale Geschwindigkeit begrenzen
-		CurrentVelocity = FMath::Clamp(CurrentVelocity.Size(), 0.0f, MaxSpeed) * CurrentVelocity.GetSafeNormal();
-	}
+	FVector Force = GetActorForwardVector() * Value * ThrustSpeed;
+	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
+	// true -> accumulate force every new call of AddForce
+	BoxComponent->AddForce(Force, NAME_None, true);
 }
 
-void APlayerSpaceShipPawn::MoveHorizontal(float Value)
+void APlayerSpaceShipPawn::RotatePlayer(float Value)
 {
-	/**
-	if (Value != 0.0f)
-	{
-		FVector Direction = FVector(0, 1, 0);
-		CurrentVelocity += Direction * Value * Acceleration * GetWorld()->GetDeltaSeconds();
-		IsMovingHorizontal = true;
-	}
-	else
-	{
-		IsMovingHorizontal = false;
-	}
-	**/
-	UE_LOG(LogTemp, Display, TEXT("Moving Horizontal %f"), Value);
-	if (Value != 0.0f)
-	{
-		// Rotiere um Z-Achse
-		AddActorLocalRotation(FRotator(0, RotationSpeed * Value * GetWorld()->GetDeltaSeconds(), 0));
-	}
+	FVector Torque = FVector(0, 0, Value * RotationSpeed);
+	BoxComponent->AddTorqueInDegrees(Torque, NAME_None, true);
 }
 
 void APlayerSpaceShipPawn::StartFire()

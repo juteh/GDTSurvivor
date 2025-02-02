@@ -30,8 +30,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void MoveVertical(float Value);
-	void MoveHorizontal(float Value);
+	void MovePlayer(float Value);
+	void RotatePlayer(float Value);
 	void StartFire();
 	void StopFire();
 	void FireProjectile();
@@ -57,9 +57,6 @@ private:
 
 	// Moving-Parameters
 
-	bool IsMovingVertical = false;
-	bool IsMovingHorizontal = false;
-
 	// increase speed over time until maxspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float Acceleration = 10000.0f;
@@ -75,9 +72,9 @@ private:
 	// only rotation speed of the ship. Has no effect on movementspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float RotationSpeed = 5.0f;
-
+	
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float ThrustForce = 50.0f;
+	float ThrustSpeed = 50.0f;
 
 	FVector CurrentVelocity;
 
