@@ -193,26 +193,3 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* Project
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
 	}
 }
-/**
-void APlayerSpaceShipPawn::MoveForward(float Value)
-{
-	if (Value != 0.0f)
-	{
-		// Einmaliger Impuls statt kontinuierlicher Beschleunigung
-		FVector Impulse = GetActorForwardVector() * ThrustForce;
-		CurrentVelocity += Impulse;
-        
-		// Maximale Geschwindigkeit begrenzen
-		CurrentVelocity = FMath::ClampVector(CurrentVelocity, -MaxSpeed, MaxSpeed);
-	}
-}
-
-void APlayerSpaceShipPawn::RotateShip(float Value)
-{
-	if (Value != 0.0f)
-	{
-		// Rotiere um Z-Achse
-		AddActorLocalRotation(FRotator(0, RotationSpeed * Value * GetWorld()->GetDeltaSeconds(), 0));
-	}
-}
-**/

@@ -71,10 +71,10 @@ private:
 
 	// only rotation speed of the ship. Has no effect on movementspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float RotationSpeed = 5.0f;
+	float RotationSpeed = 700.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float ThrustSpeed = 50.0f;
+	float ThrustSpeed = 1700.0f;
 
 	FVector CurrentVelocity;
 
