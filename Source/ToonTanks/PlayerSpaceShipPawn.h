@@ -57,17 +57,6 @@ private:
 
 	// Moving-Parameters
 
-	// increase speed over time until maxspeed
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float Acceleration = 10000.0f;
-
-	// reduce speed while no movement-keys are pressed until zero
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float Deceleration = 500.0f;
-
-	// limit for acceleration
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float MaxSpeed = 1000.0f;
 
 	// only rotation speed of the ship. Has no effect on movementspeed
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -76,8 +65,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
 
-	FVector CurrentVelocity;
-
+	FVector Force;
+ 
 	// Sound-Parameters
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")

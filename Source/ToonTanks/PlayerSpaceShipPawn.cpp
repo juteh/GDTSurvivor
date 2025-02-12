@@ -74,7 +74,7 @@ void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
 	const float boosterScaleFactor = 100.f;
 	const float heatHazeScaleFactor = 10.f;
 	
-	float thrusterFXStrength = (this->CurrentVelocity * DeltaTime).Length() / this->MaxSpeed * boosterScaleFactor;
+	float thrusterFXStrength = this->Force.Length() / this->ThrustSpeed * boosterScaleFactor * DeltaTime;
 	thrusterFXStrength = FMath::Clamp(thrusterFXStrength, 0.f, 1.f);
 	
 	thrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
@@ -103,10 +103,10 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 
 void APlayerSpaceShipPawn::MovePlayer(float Value)
 {
-	FVector Force = GetActorForwardVector() * Value * ThrustSpeed;
+	this->Force = GetActorForwardVector() * Value * ThrustSpeed;
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
 	// true -> accumulate force every new call of AddForce
-	BoxComponent->AddForce(Force, NAME_None, true);
+	BoxComponent->AddForce(this->Force, NAME_None, true);
 }
 
 void APlayerSpaceShipPawn::RotatePlayer(float Value)
