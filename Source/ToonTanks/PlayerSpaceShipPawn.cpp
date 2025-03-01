@@ -117,6 +117,7 @@ void APlayerSpaceShipPawn::RotatePlayer(float Value)
 
 void APlayerSpaceShipPawn::StartFire()
 {
+	float FireRate = CurrentWeapon == 1 ? FireRateHomingMissile : FireRateStandardProjectile;
 	GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APlayerSpaceShipPawn::FireProjectile, FireRate, true, 0.0f);
 }
 
@@ -128,7 +129,7 @@ void APlayerSpaceShipPawn::StopFire()
 void APlayerSpaceShipPawn::FireProjectile()
 {
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
-	if (ProjectileActorClass)
+	if (ProjectileActorClass && HomingMissleActorClass)
 	{
 		const FVector SpawnLocation = ProjectileSpawnPoint->GetComponentLocation();
 		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
@@ -139,7 +140,15 @@ void APlayerSpaceShipPawn::FireProjectile()
 		SpawnParameters.Instigator = GetInstigator();
 
 		// create BP_Projectile
-		const AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+		AActor* SpawnedProjectile;
+		if (CurrentWeapon == 0)
+		{
+			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+		} else
+		{
+			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissleActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+			SetClosestActorForHomingMissile(SpawnedProjectile);
+		}
 		
 		if (SpawnedProjectile)
 		{
