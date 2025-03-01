@@ -6,7 +6,6 @@
 #include "GameFramework/Pawn.h"
 #include "PlayerSpaceShipPawn.generated.h"
 
-
 UCLASS()
 class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 {
@@ -20,6 +19,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
+
+	UFUNCTION(BlueprintImplementableEvent , Category = "Combat")
+	void SetClosestActorForHomingMissile(AActor* HomingMissileActor);
+
+	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	int CurrentWeapon = 0;
 
 protected:
 	virtual void BeginPlay() override;
@@ -75,6 +80,9 @@ private:
 	// to use this we have to set in BP_PlayerSpaceShipPawn under ClassDefaults of ProjectileActorClass the Blueprint BP_Projectile
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<AActor> ProjectileActorClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<AActor> HomingMissleActorClass;
 	
 	// combat
 	
@@ -88,7 +96,10 @@ private:
 	FTimerHandle FireRateTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float FireRate = 0.2f;
+	float FireRateStandardProjectile = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float FireRateHomingMissile = 0.7f;
 	
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
