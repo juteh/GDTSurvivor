@@ -186,19 +186,6 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* Project
 
 		if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
 		{
-			FString NiagaraPath = "/Game/GDTSurvivor/Core/Projectile/NS_Projectile_Hit.NS_Projectile_Hit";
-			UNiagaraSystem* NiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-
-			// spawn explosion effect of projectile
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				NiagaraSystem,
-				ProjectileActor->GetActorLocation(),
-				FRotator::ZeroRotator,
-				FVector(1.0f),
-				true
-			);
-			
 			ProjectileActor->Destroy();
 		}
 	} else
