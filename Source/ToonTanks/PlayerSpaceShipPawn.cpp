@@ -147,7 +147,11 @@ void APlayerSpaceShipPawn::FireProjectile()
 		} else
 		{
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissleActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-			SetClosestActorForHomingMissile(SpawnedProjectile);
+			FindClosestActor();
+			if (ClosestActor && SpawnedProjectile)
+			{
+				SetClosestActorForHomingMissile(SpawnedProjectile);
+			}
 		}
 		
 		if (SpawnedProjectile)
@@ -182,23 +186,39 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* Project
 
 		if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
 		{
-			FString NiagaraPath = "/Game/GDTSurvivor/Core/Projectile/NS_Projectile_Hit.NS_Projectile_Hit";
-			UNiagaraSystem* NiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-
-			// spawn explosion effect of projectile
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				NiagaraSystem,
-				ProjectileActor->GetActorLocation(),
-				FRotator::ZeroRotator,
-				FVector(1.0f),
-				true
-			);
-			
 			ProjectileActor->Destroy();
 		}
 	} else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
 	}
+}
+
+void APlayerSpaceShipPawn::FindClosestActor()
+{
+	TArray<AActor*> FoundActors;
+	ClosestActor = nullptr;
+	
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "enemy", FoundActors);
+
+	for (AActor* CurrentActor: FoundActors)
+	{
+		if (!ClosestActor)
+		{
+			const float DistanceClosestActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
+			if (DistanceClosestActor < MaxDistanceForSearchingActors)
+			{
+				ClosestActor = CurrentActor;
+			}
+		} else
+		{
+			const float DistanceClosestActor = (this->GetActorLocation() - ClosestActor->GetActorLocation()).Length();
+			const float DistanceCurrentActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
+			if (DistanceCurrentActor < DistanceClosestActor)
+			{
+				ClosestActor = CurrentActor;
+			}
+		}
+	}
+	FoundActors.Empty();
 }

@@ -26,6 +26,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	int CurrentWeapon = 0;
 
+	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	AActor* ClosestActor;
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -110,5 +113,11 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UNiagaraComponent* thrusterFXNiagaraComponent;
+
+	// utilities
+
+	float MaxDistanceForSearchingActors = 1500;
+	
+	void FindClosestActor();
 	
 };
