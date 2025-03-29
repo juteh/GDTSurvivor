@@ -147,7 +147,7 @@ void APlayerSpaceShipPawn::FireProjectile()
 		} else
 		{
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissleActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-			FindClosestActor();
+			FindClosestActor(MaxDistanceForSearchingActors);
 			if (ClosestActor && SpawnedProjectile)
 			{
 				SetClosestActorForHomingMissile(SpawnedProjectile);
@@ -194,19 +194,19 @@ void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* Project
 	}
 }
 
-void APlayerSpaceShipPawn::FindClosestActor()
+void APlayerSpaceShipPawn::FindClosestActor(float searchDistance)
 {
 	TArray<AActor*> FoundActors;
 	ClosestActor = nullptr;
 	
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "enemy", FoundActors);
-
+	
 	for (AActor* CurrentActor: FoundActors)
 	{
 		if (!ClosestActor)
 		{
 			const float DistanceClosestActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
-			if (DistanceClosestActor < MaxDistanceForSearchingActors)
+			if (DistanceClosestActor < searchDistance)
 			{
 				ClosestActor = CurrentActor;
 			}
