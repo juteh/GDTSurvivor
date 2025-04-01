@@ -23,6 +23,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void FindClosestActor(float searchDistance);
 
+    UFUNCTION(BlueprintCallable, Category = "Utilities")
+	float GetRadarRotationAngle();
+
 	UFUNCTION(BlueprintImplementableEvent , Category = "Combat")
 	void SetClosestActorForHomingMissile(AActor* HomingMissileActor);
 

@@ -222,3 +222,22 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance)
 	}
 	FoundActors.Empty();
 }
+
+float APlayerSpaceShipPawn::GetRadarRotationAngle() {
+	FindClosestActor(MaxDistanceForSearchingActorsForRadar);
+
+	if (!ClosestActor) return 0.0f;
+
+    FVector Direction = ClosestActor->GetActorLocation() - this->GetActorLocation();
+    Direction.Normalize();
+
+    // Return Yaw (rotation angle)
+    // Calculate the yaw angle in radians
+    float YawAngleRad = FMath::Atan2(Direction.Y, Direction.X);
+
+    // Convert radians to degrees
+    float YawAngleDeg = FMath::RadiansToDegrees(YawAngleRad);
+
+    // Create a rotator with the calculated yaw
+    return YawAngleDeg;
+}
