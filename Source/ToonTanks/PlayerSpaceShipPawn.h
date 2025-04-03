@@ -20,6 +20,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+	void FindClosestActor(float searchDistance);
+
+    UFUNCTION(BlueprintCallable, Category = "Utilities")
+	float GetRadarRotationAngle();
+
 	UFUNCTION(BlueprintImplementableEvent , Category = "Combat")
 	void SetClosestActorForHomingMissile(AActor* HomingMissileActor);
 
@@ -116,8 +122,10 @@ private:
 
 	// utilities
 
+	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
 	float MaxDistanceForSearchingActors = 1500;
-	
-	void FindClosestActor();
+
+	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
+	float MaxDistanceForSearchingActorsForRadar = 3000;
 	
 };
