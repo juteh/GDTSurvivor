@@ -44,7 +44,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+    UFUNCTION(Unreliable, Server, WithValidation)
+	void MovePlayerImpl(float Value);
+
 	void MovePlayer(float Value);
+
 	void RotatePlayer(float Value);
 	void StartFire();
 	void StopFire();

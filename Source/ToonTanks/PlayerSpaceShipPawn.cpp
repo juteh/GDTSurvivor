@@ -101,12 +101,22 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
 
-void APlayerSpaceShipPawn::MovePlayer(float Value)
+
+void APlayerSpaceShipPawn::MovePlayer(float Value) 
 {
+	MovePlayerImpl(value);
+}
+
+void APlayerSpaceShipPawn::MovePlayerImpl(float Value)
+{
+if(HasAuthority()) {
 	this->Force = GetActorForwardVector() * Value * ThrustSpeed;
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
 	// true -> accumulate force every new call of AddForce
 	BoxComponent->AddForce(this->Force, NAME_None, true);
+} else {
+    //UE_LOG(LogTemp, Warning, TEXT("APlayerSpaceShipPawn::MovePlayerImpl: You do not have authority!"));
+}
 }
 
 void APlayerSpaceShipPawn::RotatePlayer(float Value)
