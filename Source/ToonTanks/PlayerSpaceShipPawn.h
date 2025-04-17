@@ -17,7 +17,7 @@ public:
 
 	// Functions in EventGraph
 	
-	UFUNCTION(BlueprintCallable, Category = "Combat")
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = "Combat")
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
@@ -44,13 +44,20 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(Server, reliable)
 	void MovePlayer(float Value);
+
+	UFUNCTION(Server, reliable)
 	void RotatePlayer(float Value);
+
+	UFUNCTION(Server, reliable)
 	void StartFire();
+	UFUNCTION(Server, reliable)
 	void StopFire();
+
+	UFUNCTION(Server, reliable)
 	void FireProjectile();
 
-	
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
