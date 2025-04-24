@@ -101,7 +101,7 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
 }
 
-void APlayerSpaceShipPawn::MovePlayer(float Value)
+void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 {
 	this->Force = GetActorForwardVector() * Value * ThrustSpeed;
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
@@ -109,24 +109,24 @@ void APlayerSpaceShipPawn::MovePlayer(float Value)
 	BoxComponent->AddForce(this->Force, NAME_None, true);
 }
 
-void APlayerSpaceShipPawn::RotatePlayer(float Value)
+void APlayerSpaceShipPawn::RotatePlayer_Implementation(float Value)
 {
 	FVector Torque = FVector(0, 0, Value * RotationSpeed);
 	BoxComponent->AddTorqueInDegrees(Torque, NAME_None, true);
 }
 
-void APlayerSpaceShipPawn::StartFire()
+void APlayerSpaceShipPawn::StartFire_Implementation()
 {
 	float FireRate = CurrentWeapon == 1 ? FireRateHomingMissile : FireRateStandardProjectile;
 	GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APlayerSpaceShipPawn::FireProjectile, FireRate, true, 0.0f);
 }
 
-void APlayerSpaceShipPawn::StopFire()
+void APlayerSpaceShipPawn::StopFire_Implementation()
 {
 	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
 }
 
-void APlayerSpaceShipPawn::FireProjectile()
+void APlayerSpaceShipPawn::FireProjectile_Implementation()
 {
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
 	if (ProjectileActorClass && HomingMissleActorClass)
@@ -165,7 +165,7 @@ void APlayerSpaceShipPawn::FireProjectile()
 }
 
 
-void APlayerSpaceShipPawn::HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor)
+void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor)
 {
 	if (HitActor && ProjectileActor)
 	{
