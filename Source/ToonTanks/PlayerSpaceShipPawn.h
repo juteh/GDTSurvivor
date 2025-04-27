@@ -86,6 +86,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
 
+	float RotateClockwise = false;
+	
 	FVector Force;
  
 	// Sound-Parameters
@@ -116,16 +118,18 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRateHomingMissile = 0.7f;
-	
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* NiagaraSceneComp;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UNiagaraSystem* thrusterFXNiagaraSystem;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UNiagaraComponent* thrusterFXNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* thrusterFXNiagaraComponentLeft;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* thrusterFXNiagaraComponentRight;
 
 	// utilities
 
