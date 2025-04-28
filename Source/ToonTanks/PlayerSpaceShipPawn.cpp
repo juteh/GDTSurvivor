@@ -52,51 +52,57 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
 	FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
-	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		thrusterFXNiagaraSystem,
-		this->RootComponent,
-		NAME_None,
-		FVector(-50.f,00.f,0.f),
-		FRotator(0,180,00.f),
-		FVector(0.5, 0.5, 0.5),
-		EAttachLocation::Type::KeepRelativeOffset,
-		true,
-		ENCPoolMethod::None
+	ThrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+	
+	ThrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
+		FVector(-50.f,00.f,0.f), FRotator(0,180,00.f),
+		FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset,
+		true, ENCPoolMethod::None
 	);
 
-	thrusterFXNiagaraComponentLeft = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		thrusterFXNiagaraSystem,
-		this->RootComponent,
-		NAME_None,
-		FVector(-50.f,-40.f,0.f),
-		FRotator(0,180,00.f),
-		FVector(0.3, 0.3, 0.3),
-		EAttachLocation::Type::KeepRelativeOffset,
-		true,
-		ENCPoolMethod::None
+	ThrusterFXNiagaraComponentLeft = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
+		FVector(-50.f,-40.f,0.f), FRotator(0,180,00.f),
+		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
+		true, ENCPoolMethod::None
 	);
 
-	thrusterFXNiagaraComponentRight = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		thrusterFXNiagaraSystem,
-		this->RootComponent,
-		NAME_None,
-		FVector(-50.f,40.f,0.f),
-		FRotator(0,180,00.f),
-		FVector(0.3, 0.3, 0.3),
-		EAttachLocation::Type::KeepRelativeOffset,
-		true,
-		ENCPoolMethod::None
+	ThrusterFXNiagaraComponentRight = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
+		FVector(-50.f,40.f,0.f),	FRotator(0,180,00.f),
+		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
+		true, ENCPoolMethod::None
 	);
 
-	thrusterFXNiagaraComponent->InitializeSystem();
-	thrusterFXNiagaraComponent->Activate(true);
+	ThrusterFXNiagaraComponentLeftFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
+		FVector(30.f,-40.f,0.f), FRotator(0,180,180),
+		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
+		true, ENCPoolMethod::None
+	);
 
-	thrusterFXNiagaraComponentLeft->InitializeSystem();
-	thrusterFXNiagaraComponentLeft->Activate(true);
+	ThrusterFXNiagaraComponentRightFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
+		FVector(30.f,40.f,0.f),	FRotator(0,180,180),
+		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
+		true, ENCPoolMethod::None
+	);
 
-	thrusterFXNiagaraComponentRight->InitializeSystem();
-	thrusterFXNiagaraComponentRight->Activate(true);
+	ThrusterFXNiagaraComponent->InitializeSystem();
+	ThrusterFXNiagaraComponent->Activate(true);
+
+	ThrusterFXNiagaraComponentLeft->InitializeSystem();
+	ThrusterFXNiagaraComponentLeft->Activate(true);
+
+	ThrusterFXNiagaraComponentRight->InitializeSystem();
+	ThrusterFXNiagaraComponentRight->Activate(true);
+
+	ThrusterFXNiagaraComponentLeftFront->InitializeSystem();
+	ThrusterFXNiagaraComponentLeftFront->Activate(true);
+
+	ThrusterFXNiagaraComponentRightFront->InitializeSystem();
+	ThrusterFXNiagaraComponentRightFront->Activate(true);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
@@ -107,7 +113,7 @@ void APlayerSpaceShipPawn::BeginPlay()
 	
 }
 
-void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
+void APlayerSpaceShipPawn::tickThrusterFX(const float DeltaTime)
 {
 	// constexpr set value while compiling not to run time. Just for the efficiency
 	constexpr float BoosterScaleFactor = 100.f;
@@ -115,32 +121,63 @@ void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
 	
 	float ThrusterFXStrength = this->Force.Length() / this->ThrustSpeed * BoosterScaleFactor * DeltaTime;
 	ThrusterFXStrength = FMath::Clamp(ThrusterFXStrength, 0.f, 1.f);
-	
-	// central thruster
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrength);
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrength);
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrength * HeatHazeScaleFactor);
+
+	float ThrusterFXRotationStrength = FMath::Abs(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z) * DeltaTime;
+	ThrusterFXRotationStrength = FMath::Clamp(ThrusterFXRotationStrength, 0.f, 1.f);
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
 	{
-		// TODO: BoxComponent->GetPhysicsAngularVelocityInDegrees nutzen um Stärke der Rotation herauszufinden
+		float ThrusterFXStrengthCentral = 0.0f;
 		float ThrusterFXStrengthLeft = 0.0f;
 		float ThrusterFXStrengthRight = 0.0f;
-		
-		if (PC->IsInputKeyDown(EKeys::A))
+		float ThrusterFXStrengthLeftFront = 0.0f;
+		float ThrusterFXStrengthRightFront = 0.0f;
+
+		// no movement while moving back and forth
+		if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
+
+		// moving backwards
+		if (PC->IsInputKeyDown(EKeys::S))
 		{
-			ThrusterFXStrengthRight = 1.0f;
-		} else if (PC->IsInputKeyDown(EKeys::D))
+			if (PC->IsInputKeyDown(EKeys::A))
+			{
+				ThrusterFXStrengthLeftFront = ThrusterFXRotationStrength;
+			} else if (PC->IsInputKeyDown(EKeys::D))
+			{
+				ThrusterFXStrengthRightFront = ThrusterFXRotationStrength;
+			} else
+			{
+				ThrusterFXStrengthRightFront = ThrusterFXStrength;
+				ThrusterFXStrengthLeftFront = ThrusterFXStrength;
+			}
+		} else
 		{
-			ThrusterFXStrengthLeft = 1.0f;
+			ThrusterFXStrengthCentral = ThrusterFXStrength;
+			if (PC->IsInputKeyDown(EKeys::A))
+			{
+				ThrusterFXStrengthRight = ThrusterFXRotationStrength;
+			} else if (PC->IsInputKeyDown(EKeys::D))
+			{
+				ThrusterFXStrengthLeft = ThrusterFXRotationStrength;
+			}
 		}
-		thrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthLeft);
-		thrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthLeft);
-		thrusterFXNiagaraComponentLeft->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthLeft * HeatHazeScaleFactor);
-		thrusterFXNiagaraComponentRight->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthRight);
-		thrusterFXNiagaraComponentRight->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthRight);
-		thrusterFXNiagaraComponentRight->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthRight * HeatHazeScaleFactor);
+		
+		ThrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthCentral);
+		ThrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthCentral);
+		ThrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthCentral * HeatHazeScaleFactor);
+		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthLeft);
+		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthLeft);
+		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthLeft * HeatHazeScaleFactor);
+		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthRight);
+		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthRight);
+		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthRight * HeatHazeScaleFactor);
+		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthLeftFront);
+		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthLeftFront);
+		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthLeftFront * HeatHazeScaleFactor);
+		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthRightFront);
+		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthRightFront);
+		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthRightFront * HeatHazeScaleFactor);
 	}
 }
 
@@ -174,11 +211,6 @@ void APlayerSpaceShipPawn::RotatePlayer_Implementation(float Value)
 {
 	FVector Torque = FVector(0, 0, Value * RotationSpeed);
 	BoxComponent->AddTorqueInDegrees(Torque, NAME_None, true);
-
-	if (Value > 0)
-	{
-		
-	}
 }
 
 void APlayerSpaceShipPawn::StartFire_Implementation()

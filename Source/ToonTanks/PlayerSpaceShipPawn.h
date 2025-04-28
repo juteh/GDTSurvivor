@@ -120,16 +120,22 @@ private:
 	float FireRateHomingMissile = 0.7f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraSystem* thrusterFXNiagaraSystem;
+	class UNiagaraSystem* ThrusterFXNiagaraSystem;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* thrusterFXNiagaraComponent;
+	class UNiagaraComponent* ThrusterFXNiagaraComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* thrusterFXNiagaraComponentLeft;
+	class UNiagaraComponent* ThrusterFXNiagaraComponentLeft;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* thrusterFXNiagaraComponentRight;
+	class UNiagaraComponent* ThrusterFXNiagaraComponentRight;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
 
 	// utilities
 
