@@ -3,7 +3,6 @@
 
 #include "PlayerSpaceShipPawn.h"
 
-#include "EditorDirectories.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -107,10 +106,24 @@ void APlayerSpaceShipPawn::BeginPlay()
 	Super::BeginPlay();
 	
 	BeginThrusterFX();
+
+	// Set up thruster-sound component, but do not play it yet
+	if (ThrusterSound)
+	{
+		ThrusterAudioComponent = UGameplayStatics::SpawnSoundAttached(
+			ThrusterSound,
+			RootComponent,
+			NAME_None,
+			FVector::ZeroVector,
+			EAttachLocation::KeepRelativeOffset,
+			false,
+			1.5
+		);
+	}
 	
 }
 
-void APlayerSpaceShipPawn::tickThrusterFX(const float DeltaTime)
+void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 {
 	// constexpr set value while compiling not to run time. Just for the efficiency
 	constexpr float BoosterScaleFactor = 100.f;
@@ -164,6 +177,28 @@ void APlayerSpaceShipPawn::tickThrusterFX(const float DeltaTime)
 		UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
 		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
 		UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
+
+		// play thruster sound
+
+		bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
+
+		if (ThrusterAudioComponent)
+		{
+			if (shouldPlaySound && !ThrusterSoundPlaying)
+			{
+				ThrusterAudioComponent->Play();
+				ThrusterSoundPlaying = true;
+			}
+			else if (!shouldPlaySound && ThrusterSoundPlaying)
+			{
+				ThrusterAudioComponent->Stop();
+				ThrusterSoundPlaying = false;
+			}
+		}
 	}
 }
 
@@ -171,7 +206,7 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	tickThrusterFX(DeltaTime);
+	TickThrusterFX(DeltaTime);
 }
 
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)

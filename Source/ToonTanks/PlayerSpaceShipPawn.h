@@ -42,7 +42,7 @@ protected:
 
 	void BeginThrusterFX();
 	
-	void tickThrusterFX(float DeltaTime);
+	void TickThrusterFX(float DeltaTime);
 
 	UNiagaraSystem* ThrusterFXNiagaraSystem;
 
@@ -127,6 +127,13 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundBase* LaserShotSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ThrusterSound;
+
+	UAudioComponent* ThrusterAudioComponent;
+
+	bool ThrusterSoundPlaying = false;
 
 	FTimerHandle FireRateTimerHandle;
 	
