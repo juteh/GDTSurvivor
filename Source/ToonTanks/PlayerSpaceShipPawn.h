@@ -102,8 +102,6 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
-
-	float RotateClockwise = false;
 	
 	FVector Force;
  
