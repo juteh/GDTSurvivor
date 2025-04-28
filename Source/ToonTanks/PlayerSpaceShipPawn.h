@@ -6,6 +6,9 @@
 #include "GameFramework/Pawn.h"
 #include "PlayerSpaceShipPawn.generated.h"
 
+class UNiagaraSystem;
+class UNiagaraComponent;
+
 UCLASS()
 class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 {
@@ -13,7 +16,6 @@ class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 
 public:
 	APlayerSpaceShipPawn();
-	void BeginThrusterFX();
 
 	// Functions in EventGraph
 	
@@ -37,8 +39,23 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void BeginThrusterFX();
 	
 	void tickThrusterFX(float DeltaTime);
+
+	UNiagaraSystem* ThrusterFXNiagaraSystem;
+
+	UNiagaraComponent* CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale);
+	
+	UNiagaraComponent* ThrusterFXNiagaraComponent;
+	UNiagaraComponent* ThrusterFXNiagaraComponentLeft;
+	UNiagaraComponent* ThrusterFXNiagaraComponentRight;
+	UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
+	UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
+
+	void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
+
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -100,7 +117,7 @@ private:
 	TSubclassOf<AActor> ProjectileActorClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	TSubclassOf<AActor> HomingMissleActorClass;
+	TSubclassOf<AActor> HomingMissileActorClass;
 	
 	// combat
 	
@@ -118,24 +135,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRateHomingMissile = 0.7f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraSystem* ThrusterFXNiagaraSystem;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* ThrusterFXNiagaraComponent;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* ThrusterFXNiagaraComponentLeft;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* ThrusterFXNiagaraComponentRight;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
 
 	// utilities
 

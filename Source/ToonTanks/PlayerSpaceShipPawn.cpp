@@ -49,60 +49,57 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 }
 
+UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale)
+{
+	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, 
+		RootComponent, 
+		NAME_None,
+		Location, 
+		Rotation,
+		Scale, 
+		EAttachLocation::Type::KeepRelativeOffset,
+		true, 
+		ENCPoolMethod::None
+	);
+
+	NiagaraComponent->InitializeSystem();
+	NiagaraComponent->Activate(true);
+	
+	return NiagaraComponent;
+}
+
+void APlayerSpaceShipPawn::UpdateThrusterParameters(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
+{
+	constexpr float HeatHazeScaleFactor = 10.f;
+    
+	ThrusterComponent->SetFloatParameter(FName("Emissive_Boost"), ThrusterStrength);
+	ThrusterComponent->SetFloatParameter(FName("Smoke_Size"), ThrusterStrength);
+	ThrusterComponent->SetFloatParameter(FName("HeatHaze_Size"), ThrusterStrength * HeatHazeScaleFactor);
+}
+
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
-	FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
-	ThrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
+	const FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	ThrusterFXNiagaraSystem = Cast<UNiagaraSystem>(
+		StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath)
+	);
 	
-	ThrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
-		FVector(-50.f,00.f,0.f), FRotator(0,180,00.f),
-		FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset,
-		true, ENCPoolMethod::None
+	ThrusterFXNiagaraComponent = CreateThrusterFX(FVector(-50,0,0),
+		FRotator(0,180,0), FVector(0.5, 0.5, 0.5)
 	);
-
-	ThrusterFXNiagaraComponentLeft = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
-		FVector(-50.f,-40.f,0.f), FRotator(0,180,00.f),
-		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
-		true, ENCPoolMethod::None
+	ThrusterFXNiagaraComponentLeft = CreateThrusterFX(FVector(-50,-40,0),
+		FRotator(0,170,0),FVector(0.3, 0.3, 0.3)
 	);
-
-	ThrusterFXNiagaraComponentRight = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
-		FVector(-50.f,40.f,0.f),	FRotator(0,180,00.f),
-		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
-		true, ENCPoolMethod::None
+	ThrusterFXNiagaraComponentRight = CreateThrusterFX(FVector(-50,40,0),
+		FRotator(0,190,0),FVector(0.3, 0.3, 0.3)
 	);
-
-	ThrusterFXNiagaraComponentLeftFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
-		FVector(30.f,-40.f,0.f), FRotator(0,180,180),
-		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
-		true, ENCPoolMethod::None
+	ThrusterFXNiagaraComponentLeftFront = CreateThrusterFX(FVector(0,-40,0),
+		FRotator(0,-10,0),FVector(0.3, 0.3, 0.3)
 	);
-
-	ThrusterFXNiagaraComponentRightFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		ThrusterFXNiagaraSystem, this->RootComponent,	NAME_None,
-		FVector(30.f,40.f,0.f),	FRotator(0,180,180),
-		FVector(0.3, 0.3, 0.3), EAttachLocation::Type::KeepRelativeOffset,
-		true, ENCPoolMethod::None
+	ThrusterFXNiagaraComponentRightFront = CreateThrusterFX(FVector(0,40,0),
+		FRotator(0,10,0),FVector(0.3, 0.3, 0.3)
 	);
-
-	ThrusterFXNiagaraComponent->InitializeSystem();
-	ThrusterFXNiagaraComponent->Activate(true);
-
-	ThrusterFXNiagaraComponentLeft->InitializeSystem();
-	ThrusterFXNiagaraComponentLeft->Activate(true);
-
-	ThrusterFXNiagaraComponentRight->InitializeSystem();
-	ThrusterFXNiagaraComponentRight->Activate(true);
-
-	ThrusterFXNiagaraComponentLeftFront->InitializeSystem();
-	ThrusterFXNiagaraComponentLeftFront->Activate(true);
-
-	ThrusterFXNiagaraComponentRightFront->InitializeSystem();
-	ThrusterFXNiagaraComponentRightFront->Activate(true);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
@@ -117,7 +114,6 @@ void APlayerSpaceShipPawn::tickThrusterFX(const float DeltaTime)
 {
 	// constexpr set value while compiling not to run time. Just for the efficiency
 	constexpr float BoosterScaleFactor = 100.f;
-	constexpr float HeatHazeScaleFactor = 10.f;
 	
 	float ThrusterFXStrength = this->Force.Length() / this->ThrustSpeed * BoosterScaleFactor * DeltaTime;
 	ThrusterFXStrength = FMath::Clamp(ThrusterFXStrength, 0.f, 1.f);
@@ -162,22 +158,12 @@ void APlayerSpaceShipPawn::tickThrusterFX(const float DeltaTime)
 				ThrusterFXStrengthLeft = ThrusterFXRotationStrength;
 			}
 		}
-		
-		ThrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthCentral);
-		ThrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthCentral);
-		ThrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthCentral * HeatHazeScaleFactor);
-		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthLeft);
-		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthLeft);
-		ThrusterFXNiagaraComponentLeft->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthLeft * HeatHazeScaleFactor);
-		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthRight);
-		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthRight);
-		ThrusterFXNiagaraComponentRight->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthRight * HeatHazeScaleFactor);
-		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthLeftFront);
-		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthLeftFront);
-		ThrusterFXNiagaraComponentLeftFront->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthLeftFront * HeatHazeScaleFactor);
-		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("Emissive_Boost"), ThrusterFXStrengthRightFront);
-		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("Smoke_Size"), ThrusterFXStrengthRightFront);
-		ThrusterFXNiagaraComponentRightFront->SetFloatParameter(FName("HeatHaze_Size"), ThrusterFXStrengthRightFront * HeatHazeScaleFactor);
+
+		UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
 	}
 }
 
@@ -191,6 +177,7 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent"));
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MovePlayer);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::RotatePlayer);
@@ -226,8 +213,9 @@ void APlayerSpaceShipPawn::StopFire_Implementation()
 
 void APlayerSpaceShipPawn::FireProjectile_Implementation()
 {
+
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
-	if (ProjectileActorClass && HomingMissleActorClass)
+	if (ProjectileActorClass && HomingMissileActorClass)
 	{
 		const FVector SpawnLocation = ProjectileSpawnPoint->GetComponentLocation();
 		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
@@ -244,7 +232,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 		} else
 		{
-			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissleActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 			FindClosestActor(MaxDistanceForSearchingActors);
 			if (ClosestActor && SpawnedProjectile)
 			{
@@ -259,6 +247,9 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
 			}
 		}
+	} else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing Actor for Projectile!"));
 	}
 }
 
