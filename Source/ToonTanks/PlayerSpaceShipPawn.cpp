@@ -68,7 +68,7 @@ UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Locatio
 	return NiagaraComponent;
 }
 
-void APlayerSpaceShipPawn::UpdateThrusterParameters(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
+void APlayerSpaceShipPawn::UpdateThrusterParameters_Implementation(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
 {
 	constexpr float HeatHazeScaleFactor = 10.f;
     

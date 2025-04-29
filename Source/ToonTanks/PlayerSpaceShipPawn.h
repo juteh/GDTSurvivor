@@ -54,6 +54,7 @@ protected:
 	UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
 	UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
 
+	UFUNCTION(Server, reliable)
 	void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
 
 
