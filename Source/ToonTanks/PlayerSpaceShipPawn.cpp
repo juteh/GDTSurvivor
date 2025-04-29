@@ -2,6 +2,7 @@
 
 
 #include "PlayerSpaceShipPawn.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -35,10 +36,6 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom);
-
-	// create thruster fx
-	NiagaraSceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("ThrusterFXPoint"));
-	NiagaraSceneComp->SetupAttachment(SpaceshipMesh);
 	
 	// create background-music and activate
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
@@ -51,14 +48,57 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 }
 
+UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale)
+{
+	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		ThrusterFXNiagaraSystem, 
+		RootComponent, 
+		NAME_None,
+		Location, 
+		Rotation,
+		Scale, 
+		EAttachLocation::Type::KeepRelativeOffset,
+		true, 
+		ENCPoolMethod::None
+	);
+
+	NiagaraComponent->InitializeSystem();
+	NiagaraComponent->Activate(true);
+	
+	return NiagaraComponent;
+}
+
+void APlayerSpaceShipPawn::UpdateThrusterParameters(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
+{
+	constexpr float HeatHazeScaleFactor = 10.f;
+    
+	ThrusterComponent->SetFloatParameter(FName("Emissive_Boost"), ThrusterStrength);
+	ThrusterComponent->SetFloatParameter(FName("Smoke_Size"), ThrusterStrength);
+	ThrusterComponent->SetFloatParameter(FName("HeatHaze_Size"), ThrusterStrength * HeatHazeScaleFactor);
+}
+
 void APlayerSpaceShipPawn::BeginThrusterFX()
 {
-	FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
-	thrusterFXNiagaraSystem = Cast<UNiagaraSystem>(StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath));
-	thrusterFXNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(thrusterFXNiagaraSystem,  this->RootComponent, NAME_None, FVector(-50.f,00.f,0.f), FRotator(0,180,00.f), FVector(0.5, 0.5, 0.5), EAttachLocation::Type::KeepRelativeOffset, true, ENCPoolMethod::None);
-
-	thrusterFXNiagaraComponent->InitializeSystem();
-	thrusterFXNiagaraComponent->Activate(true);
+	const FString NiagaraPath = "/Game/GDTSurvivor/Effects/RocketThrusterExhaustFX/FX/NS_RocketExhaust_Blue.NS_RocketExhaust_Blue";
+	ThrusterFXNiagaraSystem = Cast<UNiagaraSystem>(
+		StaticLoadObject(UNiagaraSystem::StaticClass(), nullptr, *NiagaraPath)
+	);
+	
+	ThrusterFXNiagaraComponent = CreateThrusterFX(FVector(-50,0,0),
+		FRotator(0,180,0), FVector(0.5, 0.5, 0.5)
+	);
+	ThrusterFXNiagaraComponentLeft = CreateThrusterFX(FVector(-50,-40,0),
+		FRotator(0,170,0),FVector(0.3, 0.3, 0.3)
+	);
+	ThrusterFXNiagaraComponentRight = CreateThrusterFX(FVector(-50,40,0),
+		FRotator(0,190,0),FVector(0.3, 0.3, 0.3)
+	);
+	ThrusterFXNiagaraComponentLeftFront = CreateThrusterFX(FVector(0,-40,0),
+		FRotator(0,-10,0),FVector(0.3, 0.3, 0.3)
+	);
+	ThrusterFXNiagaraComponentRightFront = CreateThrusterFX(FVector(0,40,0),
+		FRotator(0,10,0),FVector(0.3, 0.3, 0.3)
+	);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()
@@ -66,33 +106,113 @@ void APlayerSpaceShipPawn::BeginPlay()
 	Super::BeginPlay();
 	
 	BeginThrusterFX();
+
+	// Set up thruster-sound component, but do not play it yet
+	if (ThrusterSound)
+	{
+		ThrusterAudioComponent = UGameplayStatics::SpawnSoundAttached(
+			ThrusterSound,
+			RootComponent,
+			NAME_None,
+			FVector::ZeroVector,
+			EAttachLocation::KeepRelativeOffset,
+			false,
+			1.5
+		);
+	}
 	
 }
 
-void APlayerSpaceShipPawn::tickThrusterFX(float DeltaTime)
+void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 {
-	const float boosterScaleFactor = 100.f;
-	const float heatHazeScaleFactor = 10.f;
+	// constexpr set value while compiling not to run time. Just for the efficiency
+	constexpr float BoosterScaleFactor = 100.f;
 	
-	float thrusterFXStrength = this->Force.Length() / this->ThrustSpeed * boosterScaleFactor * DeltaTime;
-	thrusterFXStrength = FMath::Clamp(thrusterFXStrength, 0.f, 1.f);
-	
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("Emissive_Boost"), thrusterFXStrength);
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("Smoke_Size"), thrusterFXStrength);
-	thrusterFXNiagaraComponent->SetFloatParameter(FName("HeatHaze_Size"), thrusterFXStrength * heatHazeScaleFactor);
+	float ThrusterFXStrength = this->Force.Length() / this->ThrustSpeed * BoosterScaleFactor * DeltaTime;
+	ThrusterFXStrength = FMath::Clamp(ThrusterFXStrength, 0.f, 1.f);
+
+	float ThrusterFXRotationStrength = FMath::Abs(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z) * DeltaTime;
+	ThrusterFXRotationStrength = FMath::Clamp(ThrusterFXRotationStrength, 0.f, 1.f);
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		float ThrusterFXStrengthCentral = 0.0f;
+		float ThrusterFXStrengthLeft = 0.0f;
+		float ThrusterFXStrengthRight = 0.0f;
+		float ThrusterFXStrengthLeftFront = 0.0f;
+		float ThrusterFXStrengthRightFront = 0.0f;
+
+		// no movement while moving back and forth
+		if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
+
+		// moving backwards
+		if (PC->IsInputKeyDown(EKeys::S))
+		{
+			if (PC->IsInputKeyDown(EKeys::A))
+			{
+				ThrusterFXStrengthLeftFront = ThrusterFXRotationStrength;
+			} else if (PC->IsInputKeyDown(EKeys::D))
+			{
+				ThrusterFXStrengthRightFront = ThrusterFXRotationStrength;
+			} else
+			{
+				ThrusterFXStrengthRightFront = ThrusterFXStrength;
+				ThrusterFXStrengthLeftFront = ThrusterFXStrength;
+			}
+		} else
+		{
+			ThrusterFXStrengthCentral = ThrusterFXStrength;
+			if (PC->IsInputKeyDown(EKeys::A))
+			{
+				ThrusterFXStrengthRight = ThrusterFXRotationStrength;
+			} else if (PC->IsInputKeyDown(EKeys::D))
+			{
+				ThrusterFXStrengthLeft = ThrusterFXRotationStrength;
+			}
+		}
+
+		UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
+		UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
+
+		// play thruster sound
+
+		bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
+						  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
+
+		if (ThrusterAudioComponent)
+		{
+			if (shouldPlaySound && !ThrusterSoundPlaying)
+			{
+				ThrusterAudioComponent->Play();
+				ThrusterSoundPlaying = true;
+			}
+			else if (!shouldPlaySound && ThrusterSoundPlaying)
+			{
+				ThrusterAudioComponent->Stop();
+				ThrusterSoundPlaying = false;
+			}
+		}
+	}
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	tickThrusterFX(DeltaTime);
-	
+	TickThrusterFX(DeltaTime);
 }
 
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent"));
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MovePlayer);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::RotatePlayer);
@@ -128,8 +248,9 @@ void APlayerSpaceShipPawn::StopFire_Implementation()
 
 void APlayerSpaceShipPawn::FireProjectile_Implementation()
 {
+
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
-	if (ProjectileActorClass && HomingMissleActorClass)
+	if (ProjectileActorClass && HomingMissileActorClass)
 	{
 		const FVector SpawnLocation = ProjectileSpawnPoint->GetComponentLocation();
 		const FRotator SpawnRotation = ProjectileSpawnPoint->GetComponentRotation();
@@ -146,7 +267,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 		} else
 		{
-			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissleActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 			FindClosestActor(MaxDistanceForSearchingActors);
 			if (ClosestActor && SpawnedProjectile)
 			{
@@ -161,6 +282,9 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
 			}
 		}
+	} else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Missing Actor for Projectile!"));
 	}
 }
 
