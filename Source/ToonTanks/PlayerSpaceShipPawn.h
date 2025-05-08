@@ -105,8 +105,8 @@ public:
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
 
-	UFUNCTION(Server, reliable)
-	void UpdateThrusterSettings(float pThrusterFXStrengthCentral, float pThrusterFXStrengthLeft, float pThrusterFXStrengthRight, float pThrusterFXStrengthLeftFront, float pThrusterFXStrengthRightFront);
+	//UFUNCTION(Server, reliable)
+	//void UpdateThrusterSettings(float pThrusterFXStrengthCentral, float pThrusterFXStrengthLeft, float pThrusterFXStrengthRight, float pThrusterFXStrengthLeftFront, float pThrusterFXStrengthRightFront);
 
 	
 private:
