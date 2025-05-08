@@ -1,8 +1,8 @@
 # GDTSurvivor
 A survival game
 
-Developed with Unreal Engine 5
-Version: 5.4.4-35576357+++UE5+Release-5.4
+Developed with Unreal Engine 5.5
+Version:  5.5.4-40574608+++UE5+Release-5.5
 Plattform: Windows 11
 
 Benötigte Tools zum Auschecken:

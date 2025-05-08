@@ -6,6 +6,9 @@
 #include "GameFramework/Pawn.h"
 #include "PlayerSpaceShipPawn.generated.h"
 
+class UNiagaraSystem;
+class UNiagaraComponent;
+
 UCLASS()
 class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 {
@@ -13,11 +16,10 @@ class TOONTANKS_API APlayerSpaceShipPawn : public APawn
 
 public:
 	APlayerSpaceShipPawn();
-	void BeginThrusterFX();
 
 	// Functions in EventGraph
 	
-	UFUNCTION(BlueprintCallable, Category = "Combat")
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = "Combat")
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
@@ -37,24 +39,43 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void BeginThrusterFX();
 	
-	void tickThrusterFX(float DeltaTime);
+	void TickThrusterFX(float DeltaTime);
+
+	UNiagaraSystem* ThrusterFXNiagaraSystem;
+
+	UNiagaraComponent* CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale);
+	
+	UNiagaraComponent* ThrusterFXNiagaraComponent;
+	UNiagaraComponent* ThrusterFXNiagaraComponentLeft;
+	UNiagaraComponent* ThrusterFXNiagaraComponentRight;
+	UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
+	UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
+
+	UFUNCTION(Server, reliable)
+	void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
+
 
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    UFUNCTION(Unreliable, Server, WithValidation)
-	void MovePlayerImpl(float Value);
-
+	UFUNCTION(Server, reliable)
 	void MovePlayer(float Value);
 
+	UFUNCTION(Server, reliable)
 	void RotatePlayer(float Value);
+
+	UFUNCTION(Server, reliable)
 	void StartFire();
+	UFUNCTION(Server, reliable)
 	void StopFire();
+
+	UFUNCTION(Server, reliable)
 	void FireProjectile();
 
-	
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -82,7 +103,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
-
+	
 	FVector Force;
  
 	// Sound-Parameters
@@ -95,7 +116,7 @@ private:
 	TSubclassOf<AActor> ProjectileActorClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	TSubclassOf<AActor> HomingMissleActorClass;
+	TSubclassOf<AActor> HomingMissileActorClass;
 	
 	// combat
 	
@@ -106,6 +127,13 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundBase* LaserShotSound;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ThrusterSound;
+
+	UAudioComponent* ThrusterAudioComponent;
+
+	bool ThrusterSoundPlaying = false;
+
 	FTimerHandle FireRateTimerHandle;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -113,16 +141,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRateHomingMissile = 0.7f;
-	
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* NiagaraSceneComp;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraSystem* thrusterFXNiagaraSystem;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UNiagaraComponent* thrusterFXNiagaraComponent;
 
 	// utilities
 
