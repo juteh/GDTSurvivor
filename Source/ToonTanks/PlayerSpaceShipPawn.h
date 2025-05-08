@@ -54,11 +54,37 @@ protected:
 	UNiagaraComponent* ThrusterFXNiagaraComponentLeftFront;
 	UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
 
-	UFUNCTION(Server, reliable)
+	//UFUNCTION(Server, reliable)
 	void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
 
 
+	UPROPERTY( replicated )
+	float ThrusterFXStrengthCentral = 0.0f;
+	UPROPERTY( replicated )
+	float ThrusterFXStrengthLeft = 0.0f;
+	UPROPERTY( replicated )
+	float ThrusterFXStrengthRight = 0.0f;
+	UPROPERTY( replicated )
+	float ThrusterFXStrengthLeftFront = 0.0f;
+	UPROPERTY( replicated )
+	float ThrusterFXStrengthRightFront = 0.0f;
+	
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UFUNCTION()
+	void OnRep_ThrusterFXStrengthCentral() {}
+	UFUNCTION()
+	void OnRep_ThrusterFXStrengthLeft() {}
+	UFUNCTION()
+	void OnRep_ThrusterFXStrengthRight() {}
+	UFUNCTION()
+	void OnRep_ThrusterFXStrengthLeftFront() {}
+	UFUNCTION()
+	void OnRep_ThrusterFXStrengthRightFront() {}
+
+
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 

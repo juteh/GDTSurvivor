@@ -14,6 +14,7 @@
 #include "Niagara/Public/NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
+ #include "Net/UnrealNetwork.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -68,7 +69,17 @@ UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Locatio
 	return NiagaraComponent;
 }
 
-void APlayerSpaceShipPawn::UpdateThrusterParameters_Implementation(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
+void APlayerSpaceShipPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthCentral);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeft);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRight);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeft);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRight);
+}
+
+void APlayerSpaceShipPawn::UpdateThrusterParameters(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
 {
 	constexpr float HeatHazeScaleFactor = 10.f;
     
@@ -137,12 +148,7 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
 	{
-		float ThrusterFXStrengthCentral = 0.0f;
-		float ThrusterFXStrengthLeft = 0.0f;
-		float ThrusterFXStrengthRight = 0.0f;
-		float ThrusterFXStrengthLeftFront = 0.0f;
-		float ThrusterFXStrengthRightFront = 0.0f;
-
+		
 		// no movement while moving back and forth
 		if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
 
@@ -172,12 +178,6 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 			}
 		}
 
-		UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
-		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
-		UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
-		UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
-		UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
-
 		// play thruster sound
 
 		bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
@@ -200,6 +200,13 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 			}
 		}
 	}
+
+	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
+	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
+	UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
+	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
+	UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
+
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
