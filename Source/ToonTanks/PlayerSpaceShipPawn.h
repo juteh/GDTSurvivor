@@ -88,6 +88,15 @@ public:
 	void OnRep_Force() {}
 
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerPlaySound(UAudioComponent* Sound, bool play);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlaySound(UAudioComponent* Sound, bool play);
+
+	void PlaySoundOnNetwork(UAudioComponent* Sound, bool play);
+
+	
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -104,10 +113,6 @@ public:
 
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
-
-	//UFUNCTION(Server, reliable)
-	//void UpdateThrusterSettings(float pThrusterFXStrengthCentral, float pThrusterFXStrengthLeft, float pThrusterFXStrengthRight, float pThrusterFXStrengthLeftFront, float pThrusterFXStrengthRightFront);
-
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))

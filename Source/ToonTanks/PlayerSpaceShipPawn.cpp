@@ -19,6 +19,7 @@
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 {
+	this->bReplicates=true;
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -136,6 +137,45 @@ void APlayerSpaceShipPawn::BeginPlay()
 	
 }
 
+// Function to play sound
+void APlayerSpaceShipPawn::PlaySoundOnNetwork(UAudioComponent* Sound, bool play)
+{
+	if (HasAuthority()) // Check if this is the server
+	{
+		// Call the multicast function to play the sound on all clients
+		MulticastPlaySound(Sound, play);
+	}
+	else
+	{
+		// If not the server, request the server to play the sound
+		ServerPlaySound(Sound, play);
+	}
+}
+
+// Server function to handle sound playback
+void APlayerSpaceShipPawn::ServerPlaySound_Implementation(UAudioComponent* Sound, bool play)
+{
+	MulticastPlaySound(Sound, play);
+}
+
+bool APlayerSpaceShipPawn::ServerPlaySound_Validate(UAudioComponent* Sound, bool play)
+{
+	return true; // Add validation logic if needed
+}
+
+// Multicast function to play sound on all clients
+void APlayerSpaceShipPawn::MulticastPlaySound_Implementation(UAudioComponent* Sound, bool play)
+{
+	if (Sound)
+	{
+		//UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation());
+		if (play)
+			Sound->Play();
+		else
+			Sound->Stop();
+	}
+}
+
 void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 {
 	// constexpr set value while compiling not to run time. Just for the efficiency
@@ -144,71 +184,47 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 	float ThrusterFXStrength = this->Force.Length() / this->ThrustSpeed * BoosterScaleFactor * DeltaTime;
 	ThrusterFXStrength = FMath::Clamp(ThrusterFXStrength, 0.f, 1.f);
 
-	float ThrusterFXRotationStrength = FMath::Abs(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z) * DeltaTime;
+	float ThrusterFXRotationStrength = FMath::Abs(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z)/ this->ThrustSpeed * BoosterScaleFactor * DeltaTime;
 	ThrusterFXRotationStrength = FMath::Clamp(ThrusterFXRotationStrength, 0.f, 1.f);
-	
+
 	ThrusterFXStrengthCentral = 0.f;
 	ThrusterFXStrengthLeft = 0.f;
 	ThrusterFXStrengthRight = 0.f;
 	ThrusterFXStrengthLeftFront = 0.f;
 	ThrusterFXStrengthRightFront = 0.f;
-
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
-	{
-		// no movement while moving back and forth
-		if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S))
-		{
-			return;
-		}
-
-		// moving backwards
-		if (PC->IsInputKeyDown(EKeys::S))
-		{
-			if (PC->IsInputKeyDown(EKeys::A))
-			{
-				ThrusterFXStrengthLeftFront = ThrusterFXRotationStrength;
-			} else if (PC->IsInputKeyDown(EKeys::D))
-			{
-				ThrusterFXStrengthRightFront = ThrusterFXRotationStrength;
-			} else
-			{
-				ThrusterFXStrengthRightFront = ThrusterFXStrength;
-				ThrusterFXStrengthLeftFront = ThrusterFXStrength;
-			}
-		} else
-		{
-			ThrusterFXStrengthCentral = ThrusterFXStrength;
-			if (PC->IsInputKeyDown(EKeys::A))
-			{
-				ThrusterFXStrengthRight = ThrusterFXRotationStrength;
-			} else if (PC->IsInputKeyDown(EKeys::D))
-			{
-				ThrusterFXStrengthLeft = ThrusterFXRotationStrength;
-			}
-		}
-	}
-
-	if(HasAuthority()) {
 	
-		// play thruster sound
-		bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
-						  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
-						  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
-						  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
-						  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
-		if (ThrusterAudioComponent)
+	if(GetActorForwardVector().Dot(this->Force) > 0.f)		//We are moving forward
+	{
+		ThrusterFXStrengthCentral = ThrusterFXStrength;	
+	} else {												//... and backward
+		ThrusterFXStrengthLeftFront = ThrusterFXStrength;
+		ThrusterFXStrengthRightFront = ThrusterFXStrength;
+	}
+	
+	if(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z>0.f)		//We are moving left
+	{
+		ThrusterFXStrengthLeft = ThrusterFXRotationStrength;
+	} else {															//We are moving right
+		ThrusterFXStrengthRight = ThrusterFXRotationStrength;
+	}
+	
+	// play thruster sound
+	bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
+					  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
+					  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
+					  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
+					  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
+	if (ThrusterAudioComponent)
+	{
+		if (shouldPlaySound && !ThrusterSoundPlaying)
 		{
-			if (shouldPlaySound && !ThrusterSoundPlaying)
-			{
-				ThrusterAudioComponent->Play();
-				ThrusterSoundPlaying = true;
-			}
-			else if (!shouldPlaySound && ThrusterSoundPlaying)
-			{
-				ThrusterAudioComponent->Stop();
-				ThrusterSoundPlaying = false;
-			}
+			PlaySoundOnNetwork(ThrusterAudioComponent, true);
+			ThrusterSoundPlaying = true;
+		}
+		else if (!shouldPlaySound && ThrusterSoundPlaying)
+		{
+			PlaySoundOnNetwork(ThrusterAudioComponent, false);
+			ThrusterSoundPlaying = false;
 		}
 	}
 	
@@ -242,6 +258,7 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 {
 	this->Force = GetActorForwardVector() * Value * ThrustSpeed;
+	
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
 	// true -> accumulate force every new call of AddForce
 	BoxComponent->AddForce(this->Force, NAME_None, true);
