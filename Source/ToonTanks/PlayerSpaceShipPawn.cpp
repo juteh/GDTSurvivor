@@ -75,9 +75,21 @@ void APlayerSpaceShipPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthCentral);
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeft);
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRight);
-	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeft);
-	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRight);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeftFront);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRightFront);
+	DOREPLIFETIME(APlayerSpaceShipPawn, Force);
 }
+
+
+void APlayerSpaceShipPawn::UpdateThrusterSettings_Implementation(float pThrusterFXStrengthCentral, float pThrusterFXStrengthLeft, float pThrusterFXStrengthRight, float pThrusterFXStrengthLeftFront, float pThrusterFXStrengthRightFront)
+{
+	ThrusterFXStrengthCentral = pThrusterFXStrengthCentral;
+	ThrusterFXStrengthLeft = pThrusterFXStrengthLeft;
+	ThrusterFXStrengthRight = pThrusterFXStrengthRight;
+	ThrusterFXStrengthLeft = pThrusterFXStrengthLeftFront;
+	ThrusterFXStrengthRight = pThrusterFXStrengthRightFront;
+}
+	
 
 void APlayerSpaceShipPawn::UpdateThrusterParameters(UNiagaraComponent* ThrusterComponent, float ThrusterStrength)
 {
@@ -144,13 +156,19 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 
 	float ThrusterFXRotationStrength = FMath::Abs(BoxComponent->GetPhysicsAngularVelocityInDegrees().Z) * DeltaTime;
 	ThrusterFXRotationStrength = FMath::Clamp(ThrusterFXRotationStrength, 0.f, 1.f);
-
+	
+	
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC)
 	{
+		ThrusterFXStrengthCentral = 0.f;
+		ThrusterFXStrengthLeft = 0.f;
+		ThrusterFXStrengthRight = 0.f;
+		ThrusterFXStrengthLeftFront = 0.f;
+		ThrusterFXStrengthRightFront = 0.f;
 		
 		// no movement while moving back and forth
-		if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
+		//if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
 
 		// moving backwards
 		if (PC->IsInputKeyDown(EKeys::S))
@@ -199,6 +217,7 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 				ThrusterSoundPlaying = false;
 			}
 		}
+		UpdateThrusterSettings(ThrusterFXStrengthCentral, ThrusterFXStrengthLeft, ThrusterFXStrengthRight, ThrusterFXStrengthLeftFront,ThrusterFXStrengthRightFront );
 	}
 
 	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);

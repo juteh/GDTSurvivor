@@ -68,6 +68,8 @@ protected:
 	float ThrusterFXStrengthLeftFront = 0.0f;
 	UPROPERTY( replicated )
 	float ThrusterFXStrengthRightFront = 0.0f;
+	UPROPERTY( replicated )
+	FVector Force;
 	
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -82,7 +84,8 @@ public:
 	void OnRep_ThrusterFXStrengthLeftFront() {}
 	UFUNCTION()
 	void OnRep_ThrusterFXStrengthRightFront() {}
-
+	UFUNCTION()
+	void OnRep_Force() {}
 
 
 	virtual void Tick(float DeltaTime) override;
@@ -101,6 +104,9 @@ public:
 
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
+
+	UFUNCTION(Server, reliable)
+	void UpdateThrusterSettings(float pThrusterFXStrengthCentral, float pThrusterFXStrengthLeft, float pThrusterFXStrengthRight, float pThrusterFXStrengthLeftFront, float pThrusterFXStrengthRightFront);
 
 	
 private:
@@ -129,8 +135,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
-	
-	FVector Force;
+
  
 	// Sound-Parameters
 
