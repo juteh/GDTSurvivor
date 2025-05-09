@@ -23,10 +23,10 @@ public:
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
-	void FindClosestActor(float searchDistance);
+	void FindClosestActor(float searchDistance, FName tag="enemy");
 
     UFUNCTION(BlueprintCallable, Category = "Utilities")
-	float GetRadarRotationAngle();
+	float GetRadarRotationAngle(FName tag="enemy");
 
 	UFUNCTION(BlueprintImplementableEvent , Category = "Combat")
 	void SetClosestActorForHomingMissile(AActor* HomingMissileActor);
