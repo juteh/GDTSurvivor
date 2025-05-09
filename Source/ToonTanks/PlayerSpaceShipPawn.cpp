@@ -303,7 +303,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		} else
 		{
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-			FindClosestActor(MaxDistanceForSearchingActors);
+			FindClosestActor(MaxDistanceForSearchingActors, "Enemy");
 			if (ClosestActor && SpawnedProjectile)
 			{
 				SetClosestActorForHomingMissile(SpawnedProjectile);
@@ -353,15 +353,17 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 	}
 }
 
-void APlayerSpaceShipPawn::FindClosestActor(float searchDistance)
+void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 {
 	TArray<AActor*> FoundActors;
 	ClosestActor = nullptr;
 	
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "enemy", FoundActors);
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), tag, FoundActors);
 	
 	for (AActor* CurrentActor: FoundActors)
 	{
+		if(CurrentActor == this) continue;
+		
 		if (!ClosestActor)
 		{
 			const float DistanceClosestActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
@@ -382,8 +384,8 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance)
 	FoundActors.Empty();
 }
 
-float APlayerSpaceShipPawn::GetRadarRotationAngle() {
-	FindClosestActor(MaxDistanceForSearchingActorsForRadar);
+float APlayerSpaceShipPawn::GetRadarRotationAngle(FName tag) {
+	FindClosestActor(MaxDistanceForSearchingActorsForRadar, tag);
 
 	if (!ClosestActor) return 0.0f;
 
