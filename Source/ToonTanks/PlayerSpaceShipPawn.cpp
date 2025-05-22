@@ -130,7 +130,7 @@ void APlayerSpaceShipPawn::BeginPlay()
 			NAME_None,
 			FVector::ZeroVector,
 			EAttachLocation::KeepRelativeOffset,
-			false,
+			true,
 			1.5
 		);
 	}
@@ -147,6 +147,7 @@ void APlayerSpaceShipPawn::PlaySoundOnNetwork(UAudioComponent* Sound, bool play)
 	}
 	else
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("PlaySoundNetwork Authority"));;
 		// If not the server, request the server to play the sound
 		ServerPlaySound(Sound, play);
 	}
@@ -166,6 +167,7 @@ bool APlayerSpaceShipPawn::ServerPlaySound_Validate(UAudioComponent* Sound, bool
 // Multicast function to play sound on all clients
 void APlayerSpaceShipPawn::MulticastPlaySound_Implementation(UAudioComponent* Sound, bool play)
 {
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("PlaySoundMulticast"));;
 	if (Sound)
 	{
 		//UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation());
@@ -209,24 +211,14 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 	}
 	
 	// play thruster sound
-	bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
+	/*bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
-	if (ThrusterAudioComponent)
-	{
-		if (shouldPlaySound && !ThrusterSoundPlaying)
-		{
-			PlaySoundOnNetwork(ThrusterAudioComponent, true);
-			ThrusterSoundPlaying = true;
-		}
-		else if (!shouldPlaySound && ThrusterSoundPlaying)
-		{
-			PlaySoundOnNetwork(ThrusterAudioComponent, false);
-			ThrusterSoundPlaying = false;
-		}
-	}
+	
+	ThrusterAudioComponent->AdjustVolume(2,ThrusterFXStrength,EAudioFaderCurve::Linear);
+	*/
 	
 	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
@@ -258,6 +250,9 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 {
 	this->Force = GetActorForwardVector() * Value * ThrustSpeed;
+
+	PlaySoundOnNetwork(ThrusterAudioComponent, true);
+	ThrusterAudioComponent->AdjustVolume(3,0,EAudioFaderCurve::Linear);
 	
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
 	// true -> accumulate force every new call of AddForce

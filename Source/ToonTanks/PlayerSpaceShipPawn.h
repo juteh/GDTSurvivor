@@ -140,8 +140,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float ThrustSpeed = 1700.0f;
-
- 
+	
 	// Sound-Parameters
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
