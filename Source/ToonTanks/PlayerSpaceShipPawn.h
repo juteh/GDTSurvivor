@@ -37,6 +37,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	AActor* ClosestActor;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputMappingContext* InputMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* ShootAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* MoveAction;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -102,6 +111,9 @@ public:
 
 	UFUNCTION(Server, reliable)
 	void MovePlayer(float Value);
+
+	UFUNCTION(Server, reliable)
+	void MovePlayerEnhanced(const FInputActionValue& Value);
 
 	UFUNCTION(Server, reliable)
 	void RotatePlayer(float Value);
