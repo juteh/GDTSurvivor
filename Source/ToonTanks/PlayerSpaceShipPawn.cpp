@@ -14,7 +14,10 @@
 #include "Niagara/Public/NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
- #include "Net/UnrealNetwork.h"
+#include "Net/UnrealNetwork.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -238,13 +241,34 @@ void APlayerSpaceShipPawn::Tick(float DeltaTime)
 void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent"));
 
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+	// deprecated binding
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &APlayerSpaceShipPawn::MovePlayer);
 	PlayerInputComponent->BindAxis("Move Right / Left", this, &APlayerSpaceShipPawn::RotatePlayer);
 	// IE_Pressed -> how the fire-button is used e.g. pressed or released
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
+
+	if (EnhancedInputComponent && PlayerController)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(InputMappingContext, 0);
+		}
+		
+		if (ShootAction)
+		{
+			EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &APlayerSpaceShipPawn::StartFire);
+			EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &APlayerSpaceShipPawn::StopFire);
+		}
+		if (MoveAction)
+		{
+			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerSpaceShipPawn::MovePlayerEnhanced);
+		}
+	}
 }
 
 void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
@@ -256,6 +280,17 @@ void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 	
 	// Name_None -> we don't use skeletal mesh with bones. Use force on the whole component
 	// true -> accumulate force every new call of AddForce
+	BoxComponent->AddForce(this->Force, NAME_None, true);
+}
+
+void APlayerSpaceShipPawn::MovePlayerEnhanced_Implementation(const FInputActionValue& Value)
+{
+	
+	float MovementValue = Value.Get<float>();
+	this->Force = GetActorForwardVector() * MovementValue * ThrustSpeed;
+	PlaySoundOnNetwork(ThrusterAudioComponent, true);
+	ThrusterAudioComponent->AdjustVolume(3, 0, EAudioFaderCurve::Linear);
+    
 	BoxComponent->AddForce(this->Force, NAME_None, true);
 }
 
