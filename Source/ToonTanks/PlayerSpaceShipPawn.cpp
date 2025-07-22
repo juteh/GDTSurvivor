@@ -219,7 +219,9 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
 		
 	CurrentThrusterVolume = ThrusterFXStrength;
-	ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
+	//if(HasAuthority()) {
+	//	ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
+	//}
 	
 	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
