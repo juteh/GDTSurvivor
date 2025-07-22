@@ -68,6 +68,8 @@ protected:
 
 
 	UPROPERTY( replicated )
+	float CurrentThrusterVolume = 0.0f;
+	UPROPERTY( replicated )
 	float ThrusterFXStrengthCentral = 0.0f;
 	UPROPERTY( replicated )
 	float ThrusterFXStrengthLeft = 0.0f;
@@ -82,7 +84,9 @@ protected:
 	
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
+	UFUNCTION()
+	void OnRep_CurrentThrusterVolume() {}
 	UFUNCTION()
 	void OnRep_ThrusterFXStrengthCentral() {}
 	UFUNCTION()
@@ -102,7 +106,6 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlaySound(UAudioComponent* Sound, bool play);
-
 	void PlaySoundOnNetwork(UAudioComponent* Sound, bool play);
 
 	
@@ -123,6 +126,12 @@ public:
 	UFUNCTION(Server, reliable)
 	void StopFire();
 
+	//UFUNCTION(NetMulticast, Reliable)
+	//void UpdateThrusterFX(float volume);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void FireProjectileSound();
+	
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
 	
