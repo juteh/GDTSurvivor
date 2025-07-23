@@ -126,9 +126,6 @@ public:
 	UFUNCTION(Server, reliable)
 	void StopFire();
 
-	//UFUNCTION(NetMulticast, Reliable)
-	//void UpdateThrusterFX(float volume);
-	
 	UFUNCTION(NetMulticast, Reliable)
 	void FireProjectileSound();
 	

@@ -219,6 +219,13 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
 		
 	CurrentThrusterVolume = ThrusterFXStrength;
+		
+	ENetMode NetMode = GetNetMode();
+
+	if(NetMode == NM_DedicatedServer || NetMode == NM_ListenServer) {
+		ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
+	}
+
 	//if(HasAuthority()) {
 	//	ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
 	//}
