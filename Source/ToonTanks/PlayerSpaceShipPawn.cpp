@@ -257,8 +257,6 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 	// IE_Pressed -> how the fire-button is used e.g. pressed or released
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayerSpaceShipPawn::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &APlayerSpaceShipPawn::StopFire);
-	UE_LOG(LogTemp, Warning, TEXT("EnhancedInputComponent exist %s"), ( EnhancedInputComponent ? TEXT("true"): TEXT("false")));
-	UE_LOG(LogTemp, Warning, TEXT("PlayerController exist %s"), ( PlayerController ? TEXT("true"): TEXT("false")));
 
 	if (EnhancedInputComponent && PlayerController)
 	{
@@ -269,13 +267,11 @@ void APlayerSpaceShipPawn::SetupPlayerInputComponent(UInputComponent * PlayerInp
 		
 		if (ShootAction)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Set shoot action"));
 			EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &APlayerSpaceShipPawn::StartFire);
 			EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &APlayerSpaceShipPawn::StopFire);
 		}
 		if (MoveAction)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Set move action"));
 			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerSpaceShipPawn::MovePlayerEnhanced);
 		}
 	}
@@ -295,7 +291,6 @@ void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 
 void APlayerSpaceShipPawn::MovePlayerEnhanced_Implementation(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("MovePlayerEnhanced_Implementation"));
 	float MovementValue = Value.Get<float>();
 	this->Force = GetActorForwardVector() * MovementValue * ThrustSpeed;
 	PlaySoundOnNetwork(ThrusterAudioComponent, true);
@@ -312,7 +307,6 @@ void APlayerSpaceShipPawn::RotatePlayer_Implementation(float Value)
 
 void APlayerSpaceShipPawn::StartFire_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartFire_Implementation"));
 	float FireRate = CurrentWeapon == 1 ? FireRateHomingMissile : FireRateStandardProjectile;
 	GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APlayerSpaceShipPawn::FireProjectile, FireRate, true, 0.0f);
 }
