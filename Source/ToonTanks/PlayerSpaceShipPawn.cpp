@@ -291,7 +291,6 @@ void APlayerSpaceShipPawn::MovePlayer_Implementation(float Value)
 
 void APlayerSpaceShipPawn::MovePlayerEnhanced_Implementation(const FInputActionValue& Value)
 {
-	
 	float MovementValue = Value.Get<float>();
 	this->Force = GetActorForwardVector() * MovementValue * ThrustSpeed;
 	PlaySoundOnNetwork(ThrusterAudioComponent, true);
