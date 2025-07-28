@@ -170,10 +170,8 @@ bool APlayerSpaceShipPawn::ServerPlaySound_Validate(UAudioComponent* Sound, bool
 // Multicast function to play sound on all clients
 void APlayerSpaceShipPawn::MulticastPlaySound_Implementation(UAudioComponent* Sound, bool play)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("PlaySoundMulticast"));;
 	if (Sound)
 	{
-		//UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation());
 		if (play)
 			Sound->Play();
 		else
@@ -214,21 +212,29 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 	}
 	
 	// play thruster sound
-	/*bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
+	bool shouldPlaySound = !FMath::IsNearlyZero(ThrusterFXStrengthCentral) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthLeft) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRight) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthLeftFront) ||
 					  !FMath::IsNearlyZero(ThrusterFXStrengthRightFront);
-	
-	ThrusterAudioComponent->AdjustVolume(2,ThrusterFXStrength,EAudioFaderCurve::Linear);
-	*/
+		
+	CurrentThrusterVolume = ThrusterFXStrength;
+		
+	ENetMode NetMode = GetNetMode();
+
+	if(NetMode == NM_DedicatedServer || NetMode == NM_ListenServer) {
+		ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
+	}
+
+	//if(HasAuthority()) {
+	//	ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
+	//}
 	
 	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentRight, ThrusterFXStrengthRight);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeftFront, ThrusterFXStrengthLeftFront);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentRightFront, ThrusterFXStrengthRightFront);
-
 }
 
 void APlayerSpaceShipPawn::Tick(float DeltaTime)
@@ -316,8 +322,14 @@ void APlayerSpaceShipPawn::StopFire_Implementation()
 	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
 }
 
+void APlayerSpaceShipPawn::FireProjectileSound_Implementation()
+{
+ UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+}
+
 void APlayerSpaceShipPawn::FireProjectile_Implementation()
 {
+
 
 	// true if ProjectileActorClass is set in BP_PlayerSpaceShipPawn
 	if (ProjectileActorClass && HomingMissileActorClass)
@@ -349,7 +361,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		{
 			if (LaserShotSound)
 			{
-				UGameplayStatics::PlaySoundAtLocation(this, LaserShotSound, GetActorLocation(), 0.3f);
+			   FireProjectileSound();
 			}
 		}
 	} else
