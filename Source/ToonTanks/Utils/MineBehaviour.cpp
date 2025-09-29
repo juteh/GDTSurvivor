@@ -13,5 +13,5 @@ void UMineBehaviour::GDT_FollowActor(APawn* EnemyPawn, APawn* PlayerPawn, float 
 	UE_LOG(LogTemp, Warning, TEXT("Direction: %s"), *Direction.ToString());
 	const FVector CurrentLocation = EnemyPawn->GetActorLocation();
 	const FVector NewLocation = CurrentLocation + Direction * Speed;
-	EnemyPawn->SetActorLocation(NewLocation);
+	EnemyPawn->SetActorLocation(FVector(NewLocation.X, NewLocation.Y, CurrentLocation.Z), true);
 }
