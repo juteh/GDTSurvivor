@@ -365,7 +365,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 }
 
 
-void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor)
+void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent)
 {
 	if (HitActor && ProjectileActor)
 	{
@@ -384,10 +384,23 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 			}
 		}
 
-		if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
+		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
 		{
 			ProjectileActor->Destroy();
 		}
+
+		// check on mine if hit with playerDetection or with Body of mine
+		else if (HitActor->ActorHasTag("mine") && HitComponent)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit Component %s"), *HitActor->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("Hit Component %s"), *HitComponent->GetName());
+			if (HitComponent->GetName().Equals("BodyCollision"))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Hit!!"));
+				ProjectileActor->Destroy();
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("HandleProjectileHit_Implementation ERROR"));
 	} else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));

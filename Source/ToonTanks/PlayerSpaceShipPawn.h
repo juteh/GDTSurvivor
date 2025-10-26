@@ -20,7 +20,7 @@ public:
 	// Functions in EventGraph
 	
 	UFUNCTION(BlueprintCallable, Server, reliable, Category = "Combat")
-	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor);
+	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent);
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void FindClosestActor(float searchDistance, FName tag="enemy");
