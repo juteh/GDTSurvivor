@@ -383,24 +383,14 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 				HitActor->CallFunctionByNameWithArguments(*EventName.ToString(), *GLog, nullptr, true);
 			}
 		}
-
 		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
 		{
 			ProjectileActor->Destroy();
 		}
-
-		// check on mine if hit with playerDetection or with Body of mine
-		else if (HitActor->ActorHasTag("mine") && HitComponent)
+		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Hit Component %s"), *HitActor->GetName());
-			UE_LOG(LogTemp, Warning, TEXT("Hit Component %s"), *HitComponent->GetName());
-			if (HitComponent->GetName().Equals("BodyCollision"))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Hit!!"));
-				ProjectileActor->Destroy();
-			}
+			UE_LOG(   LogTemp, Warning, TEXT("HandleProjectileHit_Implementation: Unknown Tag"));	
 		}
-		UE_LOG(LogTemp, Warning, TEXT("HandleProjectileHit_Implementation ERROR"));
 	} else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
