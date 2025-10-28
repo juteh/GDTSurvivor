@@ -387,10 +387,6 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 		{
 			ProjectileActor->Destroy();
 		}
-		else
-		{
-			UE_LOG(   LogTemp, Warning, TEXT("HandleProjectileHit_Implementation: Unknown Tag"));	
-		}
 	} else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
