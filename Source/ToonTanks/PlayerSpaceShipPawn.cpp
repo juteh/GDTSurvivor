@@ -365,7 +365,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 }
 
 
-void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor)
+void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent)
 {
 	if (HitActor && ProjectileActor)
 	{
@@ -383,8 +383,7 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 				HitActor->CallFunctionByNameWithArguments(*EventName.ToString(), *GLog, nullptr, true);
 			}
 		}
-
-		if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
+		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
 		{
 			ProjectileActor->Destroy();
 		}
