@@ -46,6 +46,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	class UStaticMeshComponent* SpaceshipMesh;
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -139,9 +142,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class UBoxComponent* BoxComponent;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UStaticMeshComponent* SpaceshipMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	class USpringArmComponent* CameraBoom;
