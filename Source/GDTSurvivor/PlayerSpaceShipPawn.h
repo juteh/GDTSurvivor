@@ -10,7 +10,7 @@ class UNiagaraSystem;
 class UNiagaraComponent;
 
 UCLASS()
-class TOONTANKS_API APlayerSpaceShipPawn : public APawn
+class GDTSURVIVOR_API APlayerSpaceShipPawn : public APawn
 {
 	GENERATED_BODY()
 

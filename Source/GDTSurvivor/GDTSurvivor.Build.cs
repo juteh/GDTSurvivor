@@ -2,21 +2,21 @@
 
 using UnrealBuildTool;
 
-public class ToonTanks : ModuleRules
+public class GDTSurvivor : ModuleRules
 {
-	public ToonTanks(ReadOnlyTargetRules Target) : base(Target)
+	public GDTSurvivor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
+
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "Niagara" });
-		
+
 
 		// private -> only build in .cpp
 		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
