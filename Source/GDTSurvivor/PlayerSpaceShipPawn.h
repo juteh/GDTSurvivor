@@ -202,5 +202,13 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
 	float MaxDistanceForSearchingActorsForRadar = 3000;
-	
+
+	// Target tracking - optimized with timer instead of per-frame
+	FTimerHandle TargetUpdateTimerHandle;
+
+	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
+	float TargetUpdateInterval = 0.1f;  // Update every 100ms instead of every frame
+
+	void UpdateClosestTarget();
+
 };
