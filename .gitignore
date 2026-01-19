@@ -126,3 +126,8 @@ hooks/pre-push
 *.csproj
 *.sln.DotSettings
 *.sln.DotSettings.user
+
+#################################
+# Claude Code Local Settings    #
+#################################
+.claude/

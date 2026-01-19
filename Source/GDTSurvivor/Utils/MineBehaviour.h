@@ -5,7 +5,7 @@
 #include "MineBehaviour.generated.h"
 
 UCLASS()
-class TOONTANKS_API UMineBehaviour : public UBlueprintFunctionLibrary
+class GDTSURVIVOR_API UMineBehaviour : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 

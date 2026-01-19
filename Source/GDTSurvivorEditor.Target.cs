@@ -3,14 +3,14 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class ToonTanksEditorTarget : TargetRules
+public class GDTSurvivorEditorTarget : TargetRules
 {
-	public ToonTanksEditorTarget(TargetInfo Target) : base(Target)
+	public GDTSurvivorEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		// just for safety. To build always the newswest code
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
-		ExtraModuleNames.AddRange( new string[] { "ToonTanks" } );
+		ExtraModuleNames.AddRange( new string[] { "GDTSurvivor" } );
 	}
 }

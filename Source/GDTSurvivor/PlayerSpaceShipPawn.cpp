@@ -3,6 +3,7 @@
 
 #include "PlayerSpaceShipPawn.h"
 
+#include "Engine/OverlapResult.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -137,7 +138,15 @@ void APlayerSpaceShipPawn::BeginPlay()
 			1.5
 		);
 	}
-	
+
+	// Set up timer for target tracking (instead of per-frame updates)
+	GetWorldTimerManager().SetTimer(
+		TargetUpdateTimerHandle,
+		this,
+		&APlayerSpaceShipPawn::UpdateClosestTarget,
+		TargetUpdateInterval,
+		true  // Looping
+	);
 }
 
 // Function to play sound
@@ -395,50 +404,61 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 
 void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 {
-	TArray<AActor*> FoundActors;
 	ClosestActor = nullptr;
-	
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), tag, FoundActors);
-	
-	for (AActor* CurrentActor: FoundActors)
+
+	// Use squared distance to avoid expensive sqrt calculations
+	float ClosestDistanceSquared = searchDistance * searchDistance;
+	const FVector MyLocation = GetActorLocation();
+
+	// Use Sphere Overlap instead of iterating all actors - O(log n) vs O(n)
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	const bool bHit = GetWorld()->OverlapMultiByChannel(
+		Overlaps,
+		MyLocation,
+		FQuat::Identity,
+		ECC_Pawn,  // Collision channel for pawns
+		FCollisionShape::MakeSphere(searchDistance),
+		QueryParams
+	);
+
+	if (bHit)
 	{
-		if(CurrentActor == this) continue;
-		
-		if (!ClosestActor)
+		for (const FOverlapResult& Overlap : Overlaps)
 		{
-			const float DistanceClosestActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
-			if (DistanceClosestActor < searchDistance)
+			AActor* Actor = Overlap.GetActor();
+			if (Actor && Actor->ActorHasTag(tag))
 			{
-				ClosestActor = CurrentActor;
-			}
-		} else
-		{
-			const float DistanceClosestActor = (this->GetActorLocation() - ClosestActor->GetActorLocation()).Length();
-			const float DistanceCurrentActor = (this->GetActorLocation() - CurrentActor->GetActorLocation()).Length();
-			if (DistanceCurrentActor < DistanceClosestActor)
-			{
-				ClosestActor = CurrentActor;
+				const float DistanceSquared = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
+				if (DistanceSquared < ClosestDistanceSquared)
+				{
+					ClosestDistanceSquared = DistanceSquared;
+					ClosestActor = Actor;
+				}
 			}
 		}
 	}
-	FoundActors.Empty();
+}
+
+void APlayerSpaceShipPawn::UpdateClosestTarget()
+{
+	// Called by timer every TargetUpdateInterval seconds (default 100ms)
+	// This replaces per-frame updates for better performance
+	FindClosestActor(MaxDistanceForSearchingActorsForRadar, FName("enemy"));
 }
 
 float APlayerSpaceShipPawn::GetRadarRotationAngle(FName tag) {
-	FindClosestActor(MaxDistanceForSearchingActorsForRadar, tag);
+	// ClosestActor is now updated by timer, no need to call FindClosestActor here
+	// This makes GetRadarRotationAngle very cheap to call every frame
 
-	if (!ClosestActor) return 0.0f;
+	if (!ClosestActor || !IsValid(ClosestActor)) return 0.0f;
 
-    FVector Direction = ClosestActor->GetActorLocation() - this->GetActorLocation();
-    Direction.Normalize();
+	FVector Direction = ClosestActor->GetActorLocation() - GetActorLocation();
+	Direction.Normalize();
 
-    // Return Yaw (rotation angle)
-    // Calculate the yaw angle in radians
-    float YawAngleRad = FMath::Atan2(Direction.Y, Direction.X);
-
-    // Convert radians to degrees
-    float YawAngleDeg = FMath::RadiansToDegrees(YawAngleRad);
-
-    // Create a rotator with the calculated yaw
-    return YawAngleDeg;
+	// Calculate the yaw angle in radians and convert to degrees
+	const float YawAngleRad = FMath::Atan2(Direction.Y, Direction.X);
+	return FMath::RadiansToDegrees(YawAngleRad);
 }
