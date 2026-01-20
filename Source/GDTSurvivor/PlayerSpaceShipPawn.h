@@ -160,9 +160,10 @@ private:
 	float ThrustSpeed = 1700.0f;
 	
 	// Sound-Parameters
-
+	
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	class UAudioComponent* AudioComponent;
+	UAudioComponent* ThrusterAudioComponent;
+	bool ThrusterSoundPlaying = false;
 
 	// to use this we have to set in BP_PlayerSpaceShipPawn under ClassDefaults of ProjectileActorClass the Blueprint BP_Projectile
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -182,10 +183,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundBase* ThrusterSound;
-
-	UAudioComponent* ThrusterAudioComponent;
-
-	bool ThrusterSoundPlaying = false;
 
 	FTimerHandle FireRateTimerHandle;
 	

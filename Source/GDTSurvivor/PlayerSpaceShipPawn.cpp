@@ -44,10 +44,11 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	FollowCamera->SetupAttachment(CameraBoom);
 	
 	// create background-music and activate
-	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
-	AudioComponent->SetupAttachment(RootComponent);
-	AudioComponent->bAutoActivate = true;
-
+	ThrusterAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
+	ThrusterAudioComponent->SetupAttachment(RootComponent);
+	ThrusterAudioComponent->bAutoActivate = true;
+	ThrusterAudioComponent->SetIsReplicated(true);
+	
 	// create spawn point for projectile
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
@@ -137,6 +138,7 @@ void APlayerSpaceShipPawn::BeginPlay()
 			true,
 			1.5
 		);
+		ThrusterAudioComponent->SetIsReplicated(true);
 	}
 
 	// Set up timer for target tracking (instead of per-frame updates)
@@ -235,9 +237,6 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 		ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
 	}
 
-	//if(HasAuthority()) {
-	//	ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
-	//}
 	
 	UpdateThrusterParameters(ThrusterFXNiagaraComponent, ThrusterFXStrengthCentral);
 	UpdateThrusterParameters(ThrusterFXNiagaraComponentLeft, ThrusterFXStrengthLeft);
