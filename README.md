@@ -1,11 +1,14 @@
 # GDTSurvivor
 An isometric spaceship shooter. Shoot down enemies, dodge asteroids, collect resources and upgrade yourself!
 
-Developed by Martin Weier, Leon Adam und Lam Trinh
+Developed by Martin Weier, Leon Adam and Lam Trinh
 
 Developed with Unreal Engine 5.5
+
 Version:  5.5.4-40574608+++UE5+Release-5.5
+
 Plattform: Windows 11
+
 
 Tools:
 - Git https://git-scm.com/downloads
