@@ -162,6 +162,34 @@ def create_asteroid(
     bpy.ops.mesh.normals_make_consistent(inside=False)
     bpy.ops.object.mode_set(mode='OBJECT')
 
+    # ── Convex Collision Mesh fuer UE (UCX_ Prefix) ──
+    collision = asteroid.copy()
+    collision.data = asteroid.data.copy()
+    collision.name = f"UCX_{name}"
+    bpy.context.collection.objects.link(collision)
+
+    # Convex Hull aus dem Asteroid-Mesh erzeugen
+    bpy.context.view_layer.objects.active = collision
+    collision.select_set(True)
+    asteroid.select_set(False)
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.convex_hull()
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # Collision Mesh unsichtbar im Viewport (optional, stoert nicht beim Arbeiten)
+    collision.hide_set(True)
+    collision.hide_render = True
+
+    # Zurueck zum Asteroid als aktives Objekt
+    collision.select_set(False)
+    asteroid.select_set(True)
+    bpy.context.view_layer.objects.active = asteroid
+
+    col_verts = len(collision.data.vertices)
+    print(f"[OK] Collision '{collision.name}' erstellt ({col_verts} Verts)")
+
     vert_count = len(asteroid.data.vertices)
     tri_count = len(asteroid.data.polygons)
     print(f"[OK] '{name}' erstellt ({vert_count} Verts, {tri_count} Tris)")
