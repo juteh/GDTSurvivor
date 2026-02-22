@@ -156,7 +156,27 @@ def create_asteroid(
     tri = asteroid.modifiers.new(name="Triangulate", type='TRIANGULATE')
     bpy.ops.object.modifier_apply(modifier=tri.name)
 
-    # Normals nochmal nach Triangulierung korrigieren
+    # ── Robuste Normalen-Korrektur (verhindert schwarze Stellen) ──
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+
+    # 1. Normalen konsistent nach aussen berechnen
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+
+    # 2. Custom Split Normals clearen (falls vorhanden)
+    bpy.ops.mesh.customdata_custom_splitnormals_clear()
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # 3. Auto-Smooth fuer bessere Normalen-Interpolation
+    # In Blender 4.x ist auto_smooth in mesh.use_auto_smooth
+    if hasattr(asteroid.data, 'use_auto_smooth'):
+        asteroid.data.use_auto_smooth = True
+        asteroid.data.auto_smooth_angle = math.radians(30)
+
+    # 4. Nochmal Normalen recalculate im Object-Mode
+    bpy.context.view_layer.objects.active = asteroid
+    asteroid.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.normals_make_consistent(inside=False)
@@ -178,9 +198,10 @@ def create_asteroid(
     bpy.ops.mesh.convex_hull()
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    # Collision Mesh unsichtbar im Viewport (optional, stoert nicht beim Arbeiten)
-    collision.hide_set(True)
+    # WICHTIG: Collision-Mesh NICHT verstecken, sonst wird es nicht exportiert!
+    # Nur hide_render setzen (fuer Render), aber hide_set(False) damit es im Export dabei ist
     collision.hide_render = True
+    # collision.hide_set(True)  # NICHT verstecken - sonst kein Export!
 
     # Zurueck zum Asteroid als aktives Objekt
     collision.select_set(False)
