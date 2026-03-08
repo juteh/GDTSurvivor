@@ -84,6 +84,7 @@ void APlayerSpaceShipPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeftFront);
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRightFront);
 	DOREPLIFETIME(APlayerSpaceShipPawn, Force);
+	DOREPLIFETIME(APlayerSpaceShipPawn, ClosestActor);  // FIX: Replicate ClosestActor so clients get radar data
 }
 
 
@@ -126,6 +127,7 @@ void APlayerSpaceShipPawn::BeginPlay()
 	
 	BeginThrusterFX();
 
+
 	// Set up thruster-sound component, but do not play it yet
 	if (ThrusterSound)
 	{
@@ -142,6 +144,9 @@ void APlayerSpaceShipPawn::BeginPlay()
 	}
 
 	// Set up timer for target tracking (instead of per-frame updates)
+	// FIX for single-player radar: Run on both server and client
+	// In multiplayer, server is authority and replicates ClosestActor to clients
+	// In single-player, running on client ensures radar works without replication delay
 	GetWorldTimerManager().SetTimer(
 		TargetUpdateTimerHandle,
 		this,
@@ -161,7 +166,6 @@ void APlayerSpaceShipPawn::PlaySoundOnNetwork(UAudioComponent* Sound, bool play)
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("PlaySoundNetwork Authority"));;
 		// If not the server, request the server to play the sound
 		ServerPlaySound(Sound, play);
 	}
@@ -352,7 +356,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		} else
 		{
 			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-			FindClosestActor(MaxDistanceForSearchingActors, "Enemy");
+			FindClosestActor(MaxDistanceForSearchingActors, "enemy");
 			if (ClosestActor && SpawnedProjectile)
 			{
 				SetClosestActorForHomingMissile(SpawnedProjectile);
@@ -368,7 +372,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		}
 	} else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Missing Actor for Projectile!"));
+		// Missing actor class
 	}
 }
 
@@ -397,7 +401,7 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 		}
 	} else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Missing HitActor or ProjectileActor"));
+		// Missing HitActor or ProjectileActor
 	}
 }
 
@@ -439,25 +443,43 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 			}
 		}
 	}
+
 }
 
 void APlayerSpaceShipPawn::UpdateClosestTarget()
 {
 	// Called by timer every TargetUpdateInterval seconds (default 100ms)
 	// This replaces per-frame updates for better performance
-	FindClosestActor(MaxDistanceForSearchingActorsForRadar, FName("enemy"));
+	// Now searching for nearest mineral instead of enemies
+	FindClosestActor(MaxDistanceForSearchingActorsForRadar, FName("mineral"));
+	if (ClosestActor && !IsValid(ClosestActor))
+	{
+		ClosestActor = nullptr;
+	}
 }
 
 float APlayerSpaceShipPawn::GetRadarRotationAngle(FName tag) {
-	// ClosestActor is now updated by timer, no need to call FindClosestActor here
-	// This makes GetRadarRotationAngle very cheap to call every frame
+	// FIX: Ensure ClosestActor is valid before using it
+	// The ClosestActor is replicated and updated every TargetUpdateInterval seconds
 
-	if (!ClosestActor || !IsValid(ClosestActor)) return 0.0f;
+	if (!ClosestActor || !IsValid(ClosestActor))
+	{
+		return 0.0f;
+	}
 
 	FVector Direction = ClosestActor->GetActorLocation() - GetActorLocation();
 	Direction.Normalize();
 
-	// Calculate the yaw angle in radians and convert to degrees
-	const float YawAngleRad = FMath::Atan2(Direction.Y, Direction.X);
-	return FMath::RadiansToDegrees(YawAngleRad);
+	// Get the angle relative to ship's forward direction
+	FVector ShipForward = GetActorForwardVector();
+	FVector ShipRight = GetActorRightVector();
+
+	// Project direction onto ship's local axes
+	float ForwardComponent = FVector::DotProduct(Direction, ShipForward);
+	float RightComponent = FVector::DotProduct(Direction, ShipRight);
+
+	float Result = FMath::RadiansToDegrees(FMath::Atan2(RightComponent, ForwardComponent));
+
+
+	return Result;
 }
