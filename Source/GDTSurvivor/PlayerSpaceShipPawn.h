@@ -23,19 +23,19 @@ public:
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent);
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
-	void FindClosestActor(float searchDistance, FName tag="enemy");
+	AActor* FindClosestActor(float MaxDistanceForSearching, FName Tag="enemy");
 
     UFUNCTION(BlueprintCallable, Category = "Utilities")
-	float GetRadarRotationAngle(FName tag="mineral");
+	float GetRadarRotationAngle(FName Tag="mineral");
+	
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+	AActor* FindClosestTarget(const FName Tag ="enemy");
 
 	UFUNCTION(BlueprintImplementableEvent , Category = "Combat")
 	void SetClosestActorForHomingMissile(AActor* HomingMissileActor);
 
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	int CurrentWeapon = 0;
-
-	UPROPERTY(BlueprintReadWrite, Category="Combat")
-	AActor* ClosestActor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* InputMappingContext;
@@ -199,13 +199,4 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
 	float MaxDistanceForSearchingActorsForRadar = 3000;
-
-	// Target tracking - optimized with timer instead of per-frame
-	FTimerHandle TargetUpdateTimerHandle;
-
-	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
-	float TargetUpdateInterval = 0.1f;  // Update every 100ms instead of every frame
-
-	void UpdateClosestTarget();
-
 };
