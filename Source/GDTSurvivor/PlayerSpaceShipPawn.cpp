@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+	// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PlayerSpaceShipPawn.h"
@@ -19,6 +19,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "ProjectileBase.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -55,7 +56,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 
 }
 
-UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale)
+UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale) const
 {
 	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 		ThrusterFXNiagaraSystem, 
@@ -237,7 +238,7 @@ void APlayerSpaceShipPawn::TickThrusterFX(const float DeltaTime)
 		
 	ENetMode NetMode = GetNetMode();
 
-	if(NetMode == NM_DedicatedServer || NetMode == NM_ListenServer) {
+	if((NetMode == NM_DedicatedServer || NetMode == NM_ListenServer) && shouldPlaySound) {
 		ThrusterAudioComponent->AdjustVolume(2,CurrentThrusterVolume,EAudioFaderCurve::Linear);
 	}
 
@@ -347,15 +348,15 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		SpawnParameters.Owner = this;	
 		// can also be zero but useful to define an originator e.g. for events to see who fired the projectile
 		SpawnParameters.Instigator = GetInstigator();
-
+ 
 		// create BP_Projectile
-		AActor* SpawnedProjectile;
+		AProjectileBase* SpawnedProjectile;
 		if (CurrentWeapon == 0)
 		{
-			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedProjectile = GetWorld()->SpawnActor<AProjectileBase>(ProjectileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 		} else
 		{
-			SpawnedProjectile = GetWorld()->SpawnActor<AActor>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedProjectile = GetWorld()->SpawnActor<AProjectileBase>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
 			FindClosestActor(MaxDistanceForSearchingActors, "enemy");
 			if (ClosestActor && SpawnedProjectile)
 			{
@@ -365,6 +366,9 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		
 		if (SpawnedProjectile)
 		{
+
+			SpawnedProjectile->OriginPlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+			SpawnedProjectile->OriginType = EProjectileOrigin::PLAYER;
 			if (LaserShotSound)
 			{
 			   FireProjectileSound();
