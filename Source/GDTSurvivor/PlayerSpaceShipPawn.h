@@ -58,7 +58,7 @@ protected:
 
 	UNiagaraSystem* ThrusterFXNiagaraSystem;
 
-	UNiagaraComponent* CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale);
+	UNiagaraComponent* CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale) const;
 	
 	UNiagaraComponent* ThrusterFXNiagaraComponent;
 	UNiagaraComponent* ThrusterFXNiagaraComponentLeft;
@@ -67,7 +67,7 @@ protected:
 	UNiagaraComponent* ThrusterFXNiagaraComponentRightFront;
 
 	//UFUNCTION(Server, reliable)
-	void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
+	static void UpdateThrusterParameters(UNiagaraComponent* Component, float Strength);
 
 
 	UPROPERTY( replicated )
@@ -152,7 +152,7 @@ private:
 	// Moving-Parameters
 
 
-	// only rotation speed of the ship. Has no effect on movementspeed
+	// only rotation speed of the ship. Has no effect on movement speed
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float RotationSpeed = 700.0f;
 	
