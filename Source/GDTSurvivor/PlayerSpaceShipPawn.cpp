@@ -85,7 +85,6 @@ void APlayerSpaceShipPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthLeftFront);
 	DOREPLIFETIME(APlayerSpaceShipPawn, ThrusterFXStrengthRightFront);
 	DOREPLIFETIME(APlayerSpaceShipPawn, Force);
-	DOREPLIFETIME(APlayerSpaceShipPawn, ClosestActor);  // FIX: Replicate ClosestActor so clients get radar data
 }
 
 
@@ -143,18 +142,6 @@ void APlayerSpaceShipPawn::BeginPlay()
 		);
 		ThrusterAudioComponent->SetIsReplicated(true);
 	}
-
-	// Set up timer for target tracking (instead of per-frame updates)
-	// FIX for single-player radar: Run on both server and client
-	// In multiplayer, server is authority and replicates ClosestActor to clients
-	// In single-player, running on client ensures radar works without replication delay
-	GetWorldTimerManager().SetTimer(
-		TargetUpdateTimerHandle,
-		this,
-		&APlayerSpaceShipPawn::UpdateClosestTarget,
-		TargetUpdateInterval,
-		true  // Looping
-	);
 }
 
 // Function to play sound
@@ -357,11 +344,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 		} else
 		{
 			SpawnedProjectile = GetWorld()->SpawnActor<AProjectileBase>(HomingMissileActorClass, SpawnLocation, SpawnRotation, SpawnParameters);
-			FindClosestActor(MaxDistanceForSearchingActors, "enemy");
-			if (ClosestActor && SpawnedProjectile)
-			{
-				SetClosestActorForHomingMissile(SpawnedProjectile);
-			}
+			SetClosestActorForHomingMissile(SpawnedProjectile);
 		}
 		
 		if (SpawnedProjectile)
@@ -397,6 +380,7 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 				// bForceCallWithNonExec = true -> trigger the event regardless of whether it is private
 				// function only works if event don't need parameters! Alternative use function ProcessEvent
 				HitActor->CallFunctionByNameWithArguments(*EventName.ToString(), *GLog, nullptr, true);
+				ProjectileActor->Destroy();
 			}
 		}
 		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
@@ -409,12 +393,12 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 	}
 }
 
-void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
+AActor* APlayerSpaceShipPawn::FindClosestActor(const float MaxDistanceForSearching, const FName Tag)
 {
-	ClosestActor = nullptr;
+	AActor* ClosestActor = nullptr;
 
 	// Use squared distance to avoid expensive sqrt calculations
-	float ClosestDistanceSquared = searchDistance * searchDistance;
+	float ClosestDistanceSquared = MaxDistanceForSearching * MaxDistanceForSearching;
 	const FVector MyLocation = GetActorLocation();
 
 	// Use Sphere Overlap instead of iterating all actors - O(log n) vs O(n)
@@ -427,7 +411,7 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 		MyLocation,
 		FQuat::Identity,
 		ECC_Pawn,  // Collision channel for pawns
-		FCollisionShape::MakeSphere(searchDistance),
+		FCollisionShape::MakeSphere(MaxDistanceForSearching),
 		QueryParams
 	);
 
@@ -436,7 +420,7 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 		for (const FOverlapResult& Overlap : Overlaps)
 		{
 			AActor* Actor = Overlap.GetActor();
-			if (Actor && Actor->ActorHasTag(tag))
+			if (Actor && Actor->ActorHasTag(Tag))
 			{
 				const float DistanceSquared = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
 				if (DistanceSquared < ClosestDistanceSquared)
@@ -447,31 +431,18 @@ void APlayerSpaceShipPawn::FindClosestActor(float searchDistance, FName tag)
 			}
 		}
 	}
-
+	return ClosestActor;
 }
 
-void APlayerSpaceShipPawn::UpdateClosestTarget()
-{
-	// Called by timer every TargetUpdateInterval seconds (default 100ms)
-	// This replaces per-frame updates for better performance
-	// Now searching for nearest mineral instead of enemies
-	FindClosestActor(MaxDistanceForSearchingActorsForRadar, FName("mineral"));
-	if (ClosestActor && !IsValid(ClosestActor))
-	{
-		ClosestActor = nullptr;
-	}
-}
-
-float APlayerSpaceShipPawn::GetRadarRotationAngle(FName tag) {
-	// FIX: Ensure ClosestActor is valid before using it
-	// The ClosestActor is replicated and updated every TargetUpdateInterval seconds
-
-	if (!ClosestActor || !IsValid(ClosestActor))
+float APlayerSpaceShipPawn::GetRadarRotationAngle(const FName Tag) {
+	
+	const AActor* CurrentClosestActor = FindClosestActor(MaxDistanceForSearchingActorsForRadar, Tag);
+	if (!CurrentClosestActor || !IsValid(CurrentClosestActor))
 	{
 		return 0.0f;
 	}
 
-	FVector Direction = ClosestActor->GetActorLocation() - GetActorLocation();
+	FVector Direction = CurrentClosestActor->GetActorLocation() - GetActorLocation();
 	Direction.Normalize();
 
 	// Get the angle relative to ship's forward direction
@@ -486,4 +457,9 @@ float APlayerSpaceShipPawn::GetRadarRotationAngle(FName tag) {
 
 
 	return Result;
+}
+
+AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)
+{
+	return FindClosestActor(MaxDistanceForSearchingActors, Tag);
 }
