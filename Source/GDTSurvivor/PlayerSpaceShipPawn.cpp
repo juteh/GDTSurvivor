@@ -434,29 +434,35 @@ AActor* APlayerSpaceShipPawn::FindClosestActor(const float MaxDistanceForSearchi
 	return ClosestActor;
 }
 
-float APlayerSpaceShipPawn::GetRadarRotationAngle(const FName Tag) {
-	
-	const AActor* CurrentClosestActor = FindClosestActor(MaxDistanceForSearchingActorsForRadar, Tag);
-	if (!CurrentClosestActor || !IsValid(CurrentClosestActor))
-	{
-		return 0.0f;
-	}
+float APlayerSpaceShipPawn::GetRadarRotationAngle(const FName Tag)
+{
+      const AActor* CurrentClosestActor = FindClosestActor(MaxDistanceForSearchingActorsForRadar, Tag);
+      if (!CurrentClosestActor || !IsValid(CurrentClosestActor))
+      {
+          return 0.0f;
+      }
 
-	FVector Direction = CurrentClosestActor->GetActorLocation() - GetActorLocation();
-	Direction.Normalize();
+      // HUD arrow is at X: 0.0f, Y: 3.0f
+      float OffsetScale = 200.0f;
+      FVector HUDOffset = FVector(0.0f * OffsetScale, 3.0f * OffsetScale, 0.0f);
 
-	// Get the angle relative to ship's forward direction
-	FVector ShipForward = GetActorForwardVector();
-	FVector ShipRight = GetActorRightVector();
+      // Convert the HUD offset into the ship's local space so the offset moves with the ship, but the rotation remains world-relative.
+      FVector WorldOffset = GetActorRotation().RotateVector(HUDOffset);
+      FVector ArrowWorldPosition = GetActorLocation() + WorldOffset;
 
-	// Project direction onto ship's local axes
-	float ForwardComponent = FVector::DotProduct(Direction, ShipForward);
-	float RightComponent = FVector::DotProduct(Direction, ShipRight);
+      // Calculate direction from the ACTUAL arrow position to the target
+      FVector Direction = CurrentClosestActor->GetActorLocation() - ArrowWorldPosition;
+      Direction.Normalize();
 
-	float Result = FMath::RadiansToDegrees(FMath::Atan2(RightComponent, ForwardComponent));
+      // Use World Forward and World Right to keep the arrow stable when the ship rotates
+      float ForwardComponent = FVector::DotProduct(Direction, FVector::ForwardVector);
+      float RightComponent = FVector::DotProduct(Direction, FVector::RightVector);
 
+      float WorldAngle = FMath::RadiansToDegrees(FMath::Atan2(RightComponent, ForwardComponent));
 
-	return Result;
+      float RotationOffset = 90.0f;
+
+      return WorldAngle + RotationOffset;
 }
 
 AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)
