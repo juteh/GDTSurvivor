@@ -3,9 +3,9 @@ An isometric spaceship shooter. Shoot down enemies, dodge asteroids, collect res
 
 Developed by Martin Weier, Leon Adam and Lam Trinh
 
-Developed with Unreal Engine 5.5
+Developed with Unreal Engine 5.8
 
-Version:  5.5.4-40574608+++UE5+Release-5.5
+Version:  5.8.2-56702186+++UE5+Release-5.8
 
 Plattform: Windows 11
 
