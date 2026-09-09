@@ -8,6 +8,9 @@
 
 class UNiagaraSystem;
 class UNiagaraComponent;
+class UDamageType;
+class UPrimitiveComponent;
+struct FHitResult;
 
 UCLASS()
 class GDTSURVIVOR_API APlayerSpaceShipPawn : public APawn
@@ -21,6 +24,23 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Server, reliable, Category = "Combat")
 	void HandleProjectileHit(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent);
+
+	// Bound to BoxComponent's OnComponentHit in the constructor. Deals ram damage to both
+	// ships when the player physically collides (blocks) with an actor tagged "enemy".
+	UFUNCTION()
+	void OnShipCollision(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	// Damage applied to both ships on a ram collision.
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float RamDamage = 20.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<UDamageType> RamDamageTypeClass;
+
+	// Minimum time between ram-damage applications against the same actor, so sustained
+	// contact (sliding along a hull) doesn't reapply damage every physics tick.
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float RamDamageCooldown = 0.5f;
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	AActor* FindClosestActor(float MaxDistanceForSearching, FName Tag="enemy");
@@ -136,6 +156,9 @@ public:
 	void FireProjectile();
 	
 private:
+	// Timestamp (GetWorld()->GetTimeSeconds()) of the last ram-damage application per other actor, for RamDamageCooldown.
+	TMap<AActor*, float> LastRamDamageTimeByActor;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootSceneComponent;
 

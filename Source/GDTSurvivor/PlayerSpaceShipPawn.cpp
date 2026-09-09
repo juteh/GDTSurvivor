@@ -31,6 +31,8 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	// set BoxCollider for RootComponent of blueprint
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollisionComponent"));
 	RootComponent = BoxComponent;
+	// deal ram damage on physical collision with an enemy ship (in addition to whatever the Blueprint's own OnComponentHit binding does)
+	BoxComponent->OnComponentHit.AddDynamic(this, &APlayerSpaceShipPawn::OnShipCollision);
 
 	// Add and attach Mesh of SpaceShip to CapsuleCollision 
 	SpaceshipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SpaceshipMesh"));
@@ -363,6 +365,34 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 	}
 }
 
+
+void APlayerSpaceShipPawn::OnShipCollision(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	// Only apply damage on the server - clients may also receive this Hit event locally,
+	// but TakeDamage/health changes must stay authoritative.
+	if (!HasAuthority() || !OtherActor)
+	{
+		return;
+	}
+
+	if (!OtherActor->ActorHasTag(TEXT("enemy")))
+	{
+		return;
+	}
+
+	const float Now = GetWorld()->GetTimeSeconds();
+	if (const float* LastTime = LastRamDamageTimeByActor.Find(OtherActor))
+	{
+		if (Now - *LastTime < RamDamageCooldown)
+		{
+			return;
+		}
+	}
+	LastRamDamageTimeByActor.Add(OtherActor, Now);
+
+	UGameplayStatics::ApplyDamage(this, RamDamage, nullptr, OtherActor, RamDamageTypeClass);
+	UGameplayStatics::ApplyDamage(OtherActor, RamDamage, GetController(), this, RamDamageTypeClass);
+}
 
 void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, AActor* ProjectileActor, UActorComponent* HitComponent)
 {
