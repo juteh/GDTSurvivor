@@ -154,7 +154,20 @@ public:
 	
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
-	
+
+	// LevelUp upgrades
+
+	// Reduces FireRateStandardProjectile/FireRateHomingMissile by PercentIncrease/100, clamped so fire rate can't reach zero or below.
+	UFUNCTION(BlueprintCallable, Category = "LevelUp")
+	void IncreaseFireRate(float PercentIncrease);
+
+	UFUNCTION(BlueprintCallable, Category = "LevelUp")
+	void IncreaseDamageBonus(float FlatAmount);
+
+	// Flat damage added to every projectile spawned by FireProjectile(), on top of the projectile class's own default damage.
+	UPROPERTY(BlueprintReadOnly, Category = "LevelUp")
+	float DamageBonus = 0.f;
+
 private:
 	// Timestamp (GetWorld()->GetTimeSeconds()) of the last ram-damage application per other actor, for RamDamageCooldown.
 	TMap<AActor*, float> LastRamDamageTimeByActor;

@@ -354,6 +354,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 
 			SpawnedProjectile->OriginPlayerController = GetGameInstance()->GetFirstLocalPlayerController();
 			SpawnedProjectile->OriginType = EProjectileOrigin::PLAYER;
+			SpawnedProjectile->ProjectileDamage += DamageBonus;
 			if (LaserShotSound)
 			{
 			   FireProjectileSound();
@@ -498,4 +499,16 @@ float APlayerSpaceShipPawn::GetRadarRotationAngle(const FName Tag)
 AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)
 {
 	return FindClosestActor(MaxDistanceForSearchingActors, Tag);
+}
+
+void APlayerSpaceShipPawn::IncreaseFireRate(float PercentIncrease)
+{
+	const float Factor = FMath::Max(0.01f, 1.f - PercentIncrease / 100.f);
+	FireRateStandardProjectile *= Factor;
+	FireRateHomingMissile *= Factor;
+}
+
+void APlayerSpaceShipPawn::IncreaseDamageBonus(float FlatAmount)
+{
+	DamageBonus += FlatAmount;
 }
