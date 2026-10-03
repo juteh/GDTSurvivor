@@ -20,6 +20,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "ProjectileBase.h"
+#include "Components/Image.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/Widget.h"
+#include "EngineUtils.h"
+#include "MineralAsteroid.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -473,27 +478,121 @@ float APlayerSpaceShipPawn::GetRadarRotationAngle(const FName Tag)
           return 0.0f;
       }
 
-      // HUD arrow is at X: 0.0f, Y: 3.0f
-      float OffsetScale = 200.0f;
-      FVector HUDOffset = FVector(0.0f * OffsetScale, 3.0f * OffsetScale, 0.0f);
+      return GetRadarAngleToLocation(CurrentClosestActor->GetActorLocation());
+}
 
-      // Convert the HUD offset into the ship's local space so the offset moves with the ship, but the rotation remains world-relative.
-      FVector WorldOffset = GetActorRotation().RotateVector(HUDOffset);
-      FVector ArrowWorldPosition = GetActorLocation() + WorldOffset;
+float APlayerSpaceShipPawn::GetRadarAngleToLocation(const FVector& TargetLocation) const
+{
+      // Arrow rotation for a target, based on the world-space direction (see GetRadarScreenDirection).
+      return GetRadarWorldDirection(TargetLocation) - RadarArrowTextureDirection;
+}
 
-      // Calculate direction from the ACTUAL arrow position to the target
-      FVector Direction = CurrentClosestActor->GetActorLocation() - ArrowWorldPosition;
-      Direction.Normalize();
+float APlayerSpaceShipPawn::GetRadarWorldDirection(const FVector& TargetLocation) const
+{
+      // The camera looks along +X without inheriting the ship's yaw:
+      // world +X is screen-up, world +Y is screen-right.
+      // (Earlier versions started at an offset that was rotated with the ship, which made
+      // the compass swing whenever the ship turned.)
+      const FVector Direction = (TargetLocation - GetActorLocation()).GetSafeNormal2D();
+      return FMath::RadiansToDegrees(FMath::Atan2(-Direction.X, Direction.Y));
+}
 
-      // Use World Forward and World Right to keep the arrow stable when the ship rotates
-      float ForwardComponent = FVector::DotProduct(Direction, FVector::ForwardVector);
-      float RightComponent = FVector::DotProduct(Direction, FVector::RightVector);
+float APlayerSpaceShipPawn::GetRadarScreenDirection(const FVector& TargetLocation) const
+{
+	// From where the ship is drawn to where the target is drawn, so the arrow shows the player's
+	// direction to the target as seen on screen, regardless of camera angle or ship rotation.
+	const APlayerController* PC = GetController<APlayerController>();
+	FVector2D TargetScreen;
+	FVector2D PlayerScreen;
+	if (PC
+		&& PC->ProjectWorldLocationToScreen(TargetLocation, TargetScreen, true)
+		&& PC->ProjectWorldLocationToScreen(GetActorLocation(), PlayerScreen, true)
+		&& !(TargetScreen - PlayerScreen).IsNearlyZero())
+	{
+		const FVector2D Direction = TargetScreen - PlayerScreen;
+		return FMath::RadiansToDegrees(FMath::Atan2(Direction.Y, Direction.X));
+	}
+	return GetRadarWorldDirection(TargetLocation);
+}
 
-      float WorldAngle = FMath::RadiansToDegrees(FMath::Atan2(RightComponent, ForwardComponent));
+void APlayerSpaceShipPawn::PlaceRadarArrow(UWidget* Arrow, float ScreenDirection) const
+{
+	// Like a compass needle on a ring: the arrow sits on a circle around its designer position,
+	// on the side of the target, and points outwards.
+	const float Radians = FMath::DegreesToRadians(ScreenDirection);
+	Arrow->SetRenderTranslation(FVector2D(FMath::Cos(Radians), FMath::Sin(Radians)) * RadarRingRadius);
+	Arrow->SetRenderTransformAngle(ScreenDirection - RadarArrowTextureDirection);
+}
 
-      float RotationOffset = 90.0f;
+void APlayerSpaceShipPawn::UpdateRadarArrows(UWidget* AsteroidArrow, UWidget* DropzoneArrow)
+{
+	auto ApplyColor = [](UWidget* Arrow, const FLinearColor& Color)
+	{
+		UImage* Image = Cast<UImage>(Arrow);
+		if (Image && !Image->GetColorAndOpacity().Equals(Color))
+		{
+			Image->SetColorAndOpacity(Color);
+		}
+	};
+	ApplyColor(AsteroidArrow, AsteroidArrowColor);
+	ApplyColor(DropzoneArrow, DropzoneArrowColor);
 
-      return WorldAngle + RotationOffset;
+	if (AsteroidArrow)
+	{
+		const AActor* Asteroid = FindClosestMineralAsteroid();
+		AsteroidArrow->SetVisibility(Asteroid ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+		if (Asteroid)
+		{
+			PlaceRadarArrow(AsteroidArrow, GetRadarScreenDirection(Asteroid->GetActorLocation()));
+		}
+	}
+
+	if (DropzoneArrow)
+	{
+		// Without a dropzone (start tile currently recycled) point to the start tile center,
+		// which is always the world origin.
+		const AActor* Dropzone = FindDropzone();
+		const FVector Target = Dropzone ? Dropzone->GetActorLocation() : FVector::ZeroVector;
+		PlaceRadarArrow(DropzoneArrow, GetRadarScreenDirection(Target));
+	}
+}
+
+AActor* APlayerSpaceShipPawn::FindClosestMineralAsteroid() const
+{
+	// Only a few dozen asteroids exist (spawned by the endless tiles), so iterating them is cheap.
+	AActor* Closest = nullptr;
+	double ClosestDistSq = TNumericLimits<double>::Max();
+	const FVector MyLocation = GetActorLocation();
+	for (TActorIterator<AMineralAsteroid> It(GetWorld()); It; ++It)
+	{
+		const double DistSq = FVector::DistSquared(MyLocation, It->GetActorLocation());
+		if (DistSq < ClosestDistSq)
+		{
+			ClosestDistSq = DistSq;
+			Closest = *It;
+		}
+	}
+	return Closest;
+}
+
+AActor* APlayerSpaceShipPawn::FindDropzone()
+{
+	if (CachedDropzone.IsValid())
+	{
+		return CachedDropzone.Get();
+	}
+
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now < NextDropzoneSearchTime)
+	{
+		return nullptr;
+	}
+	NextDropzoneSearchTime = Now + 1.0;
+
+	TArray<AActor*> Found;
+	UGameplayStatics::GetAllActorsWithTag(this, DropzoneTag, Found);
+	CachedDropzone = Found.Num() > 0 ? Found[0] : nullptr;
+	return CachedDropzone.Get();
 }
 
 AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)

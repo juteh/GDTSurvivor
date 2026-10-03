@@ -10,6 +10,7 @@ class UNiagaraSystem;
 class UNiagaraComponent;
 class UDamageType;
 class UPrimitiveComponent;
+class UWidget;
 struct FHitResult;
 
 UCLASS()
@@ -47,6 +48,32 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Utilities")
 	float GetRadarRotationAngle(FName Tag="mineral");
+
+	// Rotates the HUD compass arrows towards the closest mineral asteroid and the dropzone.
+	// An arrow without a target is hidden. Called every frame by WBP_HUD.
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+	void UpdateRadarArrows(UWidget* AsteroidArrow, UWidget* DropzoneArrow);
+
+	// Actor tag of the mineral dropzone (MineralsDropzone Blueprint).
+	UPROPERTY(EditDefaultsOnly, Category = "Utilities")
+	FName DropzoneTag = TEXT("dropzone");
+
+	// Direction the arrow texture points to when not rotated, in screen degrees
+	// (0 = right, 90 = down, -90 = up). T_CompassArrow points up.
+	UPROPERTY(EditDefaultsOnly, Category = "Utilities")
+	float RadarArrowTextureDirection = -90.0f;
+
+	// Radius (HUD units) of the compass ring the arrows move on, around their designer position.
+	// T_CompassRing shown at 80x80 has its ring line at radius 36.
+	UPROPERTY(EditDefaultsOnly, Category = "Utilities")
+	float RadarRingRadius = 36.0f;
+
+	// Tint of the compass arrows (applied if the arrow widget is an Image).
+	UPROPERTY(EditDefaultsOnly, Category = "Utilities")
+	FLinearColor AsteroidArrowColor = FLinearColor::Red;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Utilities")
+	FLinearColor DropzoneArrowColor = FLinearColor(0.1f, 0.4f, 1.0f);
 	
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	AActor* FindClosestTarget(const FName Tag ="enemy");
@@ -235,4 +262,27 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Utilities", meta = (AllowPrivateAccess = "true"))
 	float MaxDistanceForSearchingActorsForRadar = 3000;
+
+	// Arrow rotation (for SetRenderTransformAngle) from the ship to a world location (world space).
+	float GetRadarAngleToLocation(const FVector& TargetLocation) const;
+
+	// Direction from ship to target in screen degrees (0 = right, 90 = down), world-space based.
+	float GetRadarWorldDirection(const FVector& TargetLocation) const;
+
+	// Same, but measured on screen (ship and target projected); falls back to the world direction.
+	float GetRadarScreenDirection(const FVector& TargetLocation) const;
+
+	// Moves the arrow onto the compass ring towards ScreenDirection and points it outwards.
+	void PlaceRadarArrow(UWidget* Arrow, float ScreenDirection) const;
+
+	AActor* FindClosestMineralAsteroid() const;
+
+	// The dropzone lives in the start tile and is destroyed while that tile is recycled,
+	// so this may return null; then the compass points to the start tile center instead.
+	AActor* FindDropzone();
+
+	TWeakObjectPtr<AActor> CachedDropzone;
+
+	// Avoids searching all actors every frame while no dropzone exists.
+	double NextDropzoneSearchTime = 0.0;
 };
