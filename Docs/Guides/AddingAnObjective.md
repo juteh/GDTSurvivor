@@ -1,7 +1,7 @@
 # Adding an Objective
 
 How to add a new level objective (e.g. "Destroy 20 asteroids"). Background:
-[Architecture.md, section 7](../Architecture.md#7-migration-status) and `Source/GDTSurvivor/Public/Objective.h`.
+[Architecture.md, section 7](../Architecture.md#7-migration-status) and `Source/GDTSurvivor/Public/Objectives/Objective.h`.
 
 An objective is a Blueprint child of `BP_ObjectiveBase` (C++ parent `AObjective`) that only contains **data**.
 The logic (counting, completing, replication, HUD text) is the same for all objectives.
@@ -33,7 +33,7 @@ refactoring), so "5 enemies" needs 6 kills. Set Required Items accordingly.
 
 Example: "Destroy asteroids".
 
-1. Add the event to `EObjectiveEvent` in `Source/GDTSurvivor/Public/Objective.h`, e.g. `AsteroidDestroyed`.
+1. Add the event to `EObjectiveEvent` in `Source/GDTSurvivor/Public/Objectives/Objective.h`, e.g. `AsteroidDestroyed`.
 2. Full build (enum change: Rider + editor restart).
 3. Where the event happens **on the server**, report it to the GameMode:
    - Blueprint: `Get Game Mode` → cast to `BP_GameMode_Base` → **Report Objective Event** (`AsteroidDestroyed`).

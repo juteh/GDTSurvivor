@@ -28,10 +28,17 @@ Guides:
  ```
  GDTSurvivor/
  ├── Source/                              # C++ source code
- │   └── GDTSurvivor/
- │       ├── PlayerSpaceShipPawn.h/.cpp   # Player spaceship (controls, weapons, network)
- │       ├── Utils/
- │       │   └── MineBehaviour.h/.cpp     # Mine AI behaviour
+ │   └── GDTSurvivor/                     # Game module (Public = headers, Private = sources,
+ │       │                                #   same feature folders in both)
+ │       ├── Game/                        # GameMode, GameState, PlayerController, PlayerState, settings
+ │       ├── Ship/                        # Player ship pawn and its stats component
+ │       ├── Combat/                      # Projectiles
+ │       ├── Enemies/                     # Enemy behaviour, wave trigger
+ │       ├── Upgrades/                    # Upgrade definitions and catalog
+ │       ├── Progression/                 # Meta progression and campaign run (subsystems + saves)
+ │       ├── Objectives/                  # Level objectives
+ │       ├── World/                       # Endless map tiles, mineral asteroids
+ │       ├── UI/                          # C++ parents of the HUD and menu widgets
  │       └── GDTSurvivor.Build.cs         # Build configuration
  │
  ├── Content/GDTSurvivor/                 # Unreal assets

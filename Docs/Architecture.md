@@ -184,7 +184,26 @@ UpgradeDefinition (Data Asset)          PlayerState                 Pawn: ShipSt
 
 ## 6. Naming and placement
 
-- C++: `Source/GDTSurvivor/Public` (headers) and `Private` (sources). Comments and names in English.
+- C++ follows Epic's module layout ([Modules](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-modules),
+  [Coding Standard](https://dev.epicgames.com/documentation/en-us/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine)):
+  headers in `Source/GDTSurvivor/Public/<Feature>/`, sources in `Source/GDTSurvivor/Private/<Feature>/`, with the
+  same feature folders on both sides. Include project headers with the feature path: `#include "Ship/ShipStatsComponent.h"`.
+
+  | Folder | Contains |
+  |---|---|
+  | `Game/` | GameMode, GameState, PlayerController, PlayerState, project settings |
+  | `Ship/` | Player ship pawn and its components |
+  | `Combat/` | Projectiles and damage |
+  | `Enemies/` | Enemy behaviour, spawning |
+  | `Upgrades/` | Upgrade definitions and catalog |
+  | `Progression/` | Meta progression and campaign run: subsystems and their save games |
+  | `Objectives/` | Level objectives |
+  | `World/` | Endless map tiles, mineral asteroids and other level actors |
+  | `UI/` | C++ parents of widgets |
+
+  New classes go into the folder of their feature; a new feature gets a new folder (on both sides). Do not name a
+  folder like an engine include prefix (`Framework/`, `Engine/`, `GameFramework/`, `Components/` …).
+- Comments and names in English. File names without the `A`/`U` prefix (`ShipStatsComponent.h`).
 - One subsystem or component per topic, named after the topic (`MetaProgressionSubsystem`, `ShipStatsComponent`).
 - Blueprint subclasses of C++ classes keep the `BP_` / `WBP_` prefix and contain no logic beyond tuning and asset references.
 - Events are named `On<What>Changed` / `On<Something>Happened`.

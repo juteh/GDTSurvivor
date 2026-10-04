@@ -82,8 +82,8 @@ order; a seventh one is **not shown**. To add a row:
 
 1. In the `WBP_UpgradeSelection` designer, duplicate the last row and name the new widgets
    `WBP_ButtonBase_Buy_7` and `CommonTextBlock_Upgrade_7` (exact names).
-2. In `Source/GDTSurvivor/Public/UpgradeSelectionWidget.h` add both as `BindWidget` properties, like rows 1–6.
-3. In `UpgradeSelectionWidget.cpp` (`NativeOnInitialized`) add `{WBP_ButtonBase_Buy_7, CommonTextBlock_Upgrade_7}` to `Rows`.
+2. In `Source/GDTSurvivor/Public/UI/UpgradeSelectionWidget.h` add both as `BindWidget` properties, like rows 1–6.
+3. In `Private/UI/UpgradeSelectionWidget.cpp` (`NativeOnInitialized`) add `{WBP_ButtonBase_Buy_7, CommonTextBlock_Upgrade_7}` to `Rows`.
 4. Build (Live Coding is enough).
 
 ### 6. Test
@@ -98,7 +98,7 @@ order; a seventh one is **not shown**. To add a row:
 
 Example: a `MoveSpeedMultiplier` stat.
 
-1. **Add the stat** in `Source/GDTSurvivor/Public/ShipStatsComponent.h`, enum `EShipStat`, **before `Count`**,
+1. **Add the stat** in `Source/GDTSurvivor/Public/Ship/ShipStatsComponent.h`, enum `EShipStat`, **before `Count`**,
    with a one-line comment that says what it means and whether lower or higher is better.
 2. **Give it a base value** in `UShipStatsComponent::GetBaseValue` (`ShipStatsComponent.cpp`).
    If designers should tune it, add a `Base…` property in the *Stats | Base* section of the header, like `BaseMaxShield`.
@@ -121,7 +121,7 @@ does must be expressible as effects on stats; see [Architecture.md, rule 9](../A
 |---|---|
 | Upgrade assets and catalog | `Content/GDTSurvivor/Core/Upgrades/` |
 | Which catalog is used | Project Settings → Game → GDTSurvivor → *Upgrade Catalog* (`Config/DefaultGame.ini`) |
-| Asset class | `UUpgradeDefinition` (`Source/GDTSurvivor/Public/UpgradeDefinition.h`) |
+| Asset class | `UUpgradeDefinition` (`Source/GDTSurvivor/Public/Upgrades/UpgradeDefinition.h`) |
 | Stats and their calculation | `UShipStatsComponent` (`ShipStatsComponent.h/.cpp`) |
 | Chosen level-ups in a run | `AShipPlayerState` (`GetUpgradeStacks`, `GetLevelUpOptions`) |
 | Bought permanent levels | `UMetaProgressionSubsystem`, save slot `metaprogression` (`Saved/SaveGames/metaprogression.sav`) |
