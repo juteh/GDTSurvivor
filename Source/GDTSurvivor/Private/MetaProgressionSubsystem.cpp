@@ -1,9 +1,7 @@
 #include "MetaProgressionSubsystem.h"
 
 #include "MetaProgressionSaveGame.h"
-#include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
-#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString UMetaProgressionSubsystem::SaveSlotName = TEXT("metaprogression");
@@ -73,28 +71,6 @@ void UMetaProgressionSubsystem::AddMoney(int32 Amount)
 {
 	SaveGame->Money = FMath::Max(0, SaveGame->Money + Amount);
 	HandleChanged();
-}
-
-TArray<uint8> UMetaProgressionSubsystem::GetPermanentUpgradeStacks(const UObject* WorldContextObject)
-{
-	TArray<uint8> Stacks;
-
-	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	const UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
-	const UMetaProgressionSubsystem* Subsystem = GameInstance ? GameInstance->GetSubsystem<UMetaProgressionSubsystem>() : nullptr;
-	if (!Subsystem)
-	{
-		return Stacks;
-	}
-
-	for (const TPair<EUpgradeType, int32>& Entry : Subsystem->SaveGame->UpgradeLevels)
-	{
-		for (int32 Level = 0; Level < Entry.Value; ++Level)
-		{
-			Stacks.Add(static_cast<uint8>(Entry.Key));
-		}
-	}
-	return Stacks;
 }
 
 void UMetaProgressionSubsystem::Save()

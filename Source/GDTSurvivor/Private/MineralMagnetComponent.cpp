@@ -3,7 +3,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerState.h"
+#include "ShipStatsComponent.h"
 
 namespace
 {
@@ -84,40 +84,8 @@ APawn* UMineralMagnetComponent::FindPlayerInRange() const
 
 float UMineralMagnetComponent::GetPickupRangeMultiplier(const APawn* Pawn)
 {
-	// GetPickupRangeMultiplier lives in BP_PlayerStateSpaceShip (Blueprint), so call it via reflection.
-	APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState() : nullptr;
-	UFunction* Function = PlayerState ? PlayerState->FindFunction(TEXT("GetPickupRangeMultiplier")) : nullptr;
-	if (!Function)
-	{
-		return 1.0f;
-	}
-
-	uint8* Params = static_cast<uint8*>(FMemory_Alloca(Function->ParmsSize));
-	FMemory::Memzero(Params, Function->ParmsSize);
-	for (TFieldIterator<FProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		It->InitializeValue_InContainer(Params);
-	}
-
-	PlayerState->ProcessEvent(Function, Params);
-
-	float Multiplier = 1.0f;
-	for (TFieldIterator<FProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		if (It->HasAnyPropertyFlags(CPF_OutParm | CPF_ReturnParm))
-		{
-			if (const FDoubleProperty* DoubleProp = CastField<FDoubleProperty>(*It))
-			{
-				Multiplier = DoubleProp->GetPropertyValue_InContainer(Params);
-			}
-			else if (const FFloatProperty* FloatProp = CastField<FFloatProperty>(*It))
-			{
-				Multiplier = FloatProp->GetPropertyValue_InContainer(Params);
-			}
-		}
-		It->DestroyValue_InContainer(Params);
-	}
-	return Multiplier;
+	const UShipStatsComponent* Stats = Pawn ? Pawn->FindComponentByClass<UShipStatsComponent>() : nullptr;
+	return Stats ? Stats->GetStat(EShipStat::PickupRangeMultiplier) : 1.0f;
 }
 
 void UMineralMagnetComponent::MoveTowardTarget(float DeltaTime)

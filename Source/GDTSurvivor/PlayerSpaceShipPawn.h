@@ -95,6 +95,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UStaticMeshComponent* SpaceshipMesh;
+
+	// Health, shield, fire rate, damage bonus and pickup range incl. all upgrades.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UShipStatsComponent* ShipStats;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -182,18 +186,6 @@ public:
 	UFUNCTION(Server, reliable)
 	void FireProjectile();
 
-	// LevelUp upgrades
-
-	// Reduces FireRateStandardProjectile/FireRateHomingMissile by PercentIncrease/100, clamped so fire rate can't reach zero or below.
-	UFUNCTION(BlueprintCallable, Category = "LevelUp")
-	void IncreaseFireRate(float PercentIncrease);
-
-	UFUNCTION(BlueprintCallable, Category = "LevelUp")
-	void IncreaseDamageBonus(float FlatAmount);
-
-	// Flat damage added to every projectile spawned by FireProjectile(), on top of the projectile class's own default damage.
-	UPROPERTY(BlueprintReadOnly, Category = "LevelUp")
-	float DamageBonus = 0.f;
 
 private:
 	// Timestamp (GetWorld()->GetTimeSeconds()) of the last ram-damage application per other actor, for RamDamageCooldown.
@@ -249,6 +241,7 @@ private:
 
 	FTimerHandle FireRateTimerHandle;
 	
+	// Base seconds between shots; multiplied by the FireIntervalMultiplier stat of ShipStats.
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	float FireRateStandardProjectile = 0.2f;
 

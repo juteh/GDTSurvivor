@@ -14,8 +14,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMetaProgressionChanged);
  * to the "metaprogression" save slot. Lives as long as the game instance, so the upgrade
  * menu and every level read the same data.
  *
- * Permanent upgrades are applied at level start by BP_GameMode_Base.ApplyPermanentUpgrades,
- * which runs the same per-stack effect as a level-up (ApplyUpgradeEffect) once per bought level.
+ * Permanent upgrades are applied by UShipStatsComponent when the player ship starts,
+ * with the same per-stack effect as a level-up.
  */
 UCLASS()
 class GDTSURVIVOR_API UMetaProgressionSubsystem : public UGameInstanceSubsystem
@@ -51,11 +51,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "MetaProgression")
 	void AddMoney(int32 Amount);
-
-	// One entry per bought upgrade level, as EUpgradeType values (byte, because Blueprint
-	// function parameters can't use the C++ enum). Feed each entry to ApplyUpgradeEffect.
-	UFUNCTION(BlueprintPure, Category = "MetaProgression", meta = (WorldContext = "WorldContextObject"))
-	static TArray<uint8> GetPermanentUpgradeStacks(const UObject* WorldContextObject);
 
 	// Broadcast after money or an upgrade level changed.
 	UPROPERTY(BlueprintAssignable, Category = "MetaProgression")

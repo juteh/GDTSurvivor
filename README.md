@@ -15,6 +15,10 @@ Tools:
 - Git Large File Storage https://git-lfs.com/
 - For developing with IDE use Rider https://www.jetbrains.com/de-de/rider/ 
 
+## Architecture
+
+Responsibilities, communication rules and what is stored where: [Docs/Architecture.md](Docs/Architecture.md)
+
 ## Project Structure
  
  ```

@@ -29,7 +29,7 @@ public:
 	EProjectileOrigin OriginType = EProjectileOrigin::AI;
 
 	// Damage dealt on hit. Base value is set per Blueprint class default (e.g. BP_Projectile);
-	// the spawning pawn may add a flat bonus on top after spawning (see APlayerSpaceShipPawn::DamageBonus).
+	// the spawning pawn may add a flat bonus on top after spawning (DamageBonus stat of UShipStatsComponent).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats")
 	float ProjectileDamage = 0.f;
 

@@ -8,7 +8,7 @@ class APawn;
 
 /**
  * Pulls the owning mineral to a player in range, like BP_XPPickup (same speeds, same
- * PickupRange upgrade via BP_PlayerStateSpaceShip.GetPickupRangeMultiplier).
+ * PickupRangeMultiplier stat of the player's UShipStatsComponent).
  * Collecting itself stays in the mineral Blueprint (its Box overlap).
  * Can also push the mineral away with a fading velocity (Launch), e.g. when an asteroid breaks.
  */

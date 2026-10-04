@@ -25,6 +25,7 @@
 #include "Components/Widget.h"
 #include "EngineUtils.h"
 #include "MineralAsteroid.h"
+#include "ShipStatsComponent.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -61,6 +62,7 @@ APlayerSpaceShipPawn::APlayerSpaceShipPawn()
 	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawnPoint"));
 	ProjectileSpawnPoint->SetupAttachment(SpaceshipMesh);
 
+	ShipStats = CreateDefaultSubobject<UShipStatsComponent>(TEXT("ShipStats"));
 }
 
 UNiagaraComponent* APlayerSpaceShipPawn::CreateThrusterFX(const FVector& Location, const FRotator& Rotation, const FVector& Scale) const
@@ -314,7 +316,8 @@ void APlayerSpaceShipPawn::RotatePlayer_Implementation(float Value)
 
 void APlayerSpaceShipPawn::StartFire_Implementation()
 {
-	float FireRate = CurrentWeapon == 1 ? FireRateHomingMissile : FireRateStandardProjectile;
+	const float BaseFireRate = CurrentWeapon == 1 ? FireRateHomingMissile : FireRateStandardProjectile;
+	const float FireRate = BaseFireRate * ShipStats->GetStat(EShipStat::FireIntervalMultiplier);
 	GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APlayerSpaceShipPawn::FireProjectile, FireRate, true, 0.0f);
 }
 
@@ -359,7 +362,7 @@ void APlayerSpaceShipPawn::FireProjectile_Implementation()
 
 			SpawnedProjectile->OriginPlayerController = GetGameInstance()->GetFirstLocalPlayerController();
 			SpawnedProjectile->OriginType = EProjectileOrigin::PLAYER;
-			SpawnedProjectile->ProjectileDamage += DamageBonus;
+			SpawnedProjectile->ProjectileDamage += ShipStats->GetStat(EShipStat::DamageBonus);
 			if (LaserShotSound)
 			{
 			   FireProjectileSound();
@@ -598,16 +601,4 @@ AActor* APlayerSpaceShipPawn::FindDropzone()
 AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)
 {
 	return FindClosestActor(MaxDistanceForSearchingActors, Tag);
-}
-
-void APlayerSpaceShipPawn::IncreaseFireRate(float PercentIncrease)
-{
-	const float Factor = FMath::Max(0.01f, 1.f - PercentIncrease / 100.f);
-	FireRateStandardProjectile *= Factor;
-	FireRateHomingMissile *= Factor;
-}
-
-void APlayerSpaceShipPawn::IncreaseDamageBonus(float FlatAmount)
-{
-	DamageBonus += FlatAmount;
 }
