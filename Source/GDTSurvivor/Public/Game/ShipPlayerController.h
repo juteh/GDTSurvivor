@@ -4,6 +4,8 @@
 #include "GameFramework/PlayerController.h"
 #include "ShipPlayerController.generated.h"
 
+class UInputAction;
+class UInputMappingContext;
 class UUserWidget;
 
 UENUM(BlueprintType)
@@ -19,6 +21,8 @@ enum class EMatchResult : uint8
  * Parent class of BP_SpaceShipPC. Owns everything the local player sees on screen: the HUD, the
  * objective HUD, the tutorial overlay, the pause menu, the level-up selection (queued, pauses the game) and the
  * end-of-match screens. The GameMode only decides *that* a match ended and tells the controllers.
+ * Also owns the interface input (pause, tutorial, player list), so it keeps working while the player
+ * has no ship. Ship controls (move, shoot, weapons) stay on the pawn.
  * See Docs/Architecture.md, section 2.
  */
 UCLASS()
@@ -46,7 +50,28 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 	virtual void OnRep_PlayerState() override;
+
+	// Shows or hides the player list. Implemented in BP_SpaceShipPC, which still owns that widget.
+	UFUNCTION(BlueprintImplementableEvent, Category = "Screens")
+	void OnTogglePlayerList();
+
+	// Interface input, added on top of the pawn's ship controls.
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputMappingContext> InterfaceMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	int32 InterfaceMappingPriority = 1;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> PauseAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> ToggleTutorialAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> TogglePlayerListAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> HUDClass;
@@ -77,6 +102,8 @@ protected:
 	int32 OverlayZOrder = 2;
 
 private:
+	void HandleTogglePlayerList();
+
 	void BindToPlayerState();
 
 	UFUNCTION()

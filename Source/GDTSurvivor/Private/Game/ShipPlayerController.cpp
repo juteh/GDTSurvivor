@@ -4,7 +4,10 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Engine/Engine.h"
+#include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Game/ShipPlayerState.h"
 
 void AShipPlayerController::ShowMatchResultForAllPlayers(const UObject* WorldContextObject, EMatchResult Result)
@@ -33,6 +36,14 @@ void AShipPlayerController::BeginPlay()
 		return;
 	}
 
+	if (InterfaceMappingContext)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+		{
+			InputSubsystem->AddMappingContext(InterfaceMappingContext, InterfaceMappingPriority);
+		}
+	}
+
 	if (ObjectiveHUDClass)
 	{
 		// Below the HUD, like before.
@@ -50,6 +61,36 @@ void AShipPlayerController::BeginPlay()
 	}
 
 	BindToPlayerState();
+}
+
+void AShipPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
+	if (!EnhancedInput)
+	{
+		return;
+	}
+
+	// Started = once per key press, no matter which triggers the action has.
+	if (PauseAction)
+	{
+		EnhancedInput->BindAction(PauseAction, ETriggerEvent::Started, this, &AShipPlayerController::ShowPauseMenu);
+	}
+	if (ToggleTutorialAction)
+	{
+		EnhancedInput->BindAction(ToggleTutorialAction, ETriggerEvent::Started, this, &AShipPlayerController::ToggleTutorial);
+	}
+	if (TogglePlayerListAction)
+	{
+		EnhancedInput->BindAction(TogglePlayerListAction, ETriggerEvent::Started, this, &AShipPlayerController::HandleTogglePlayerList);
+	}
+}
+
+void AShipPlayerController::HandleTogglePlayerList()
+{
+	OnTogglePlayerList();
 }
 
 void AShipPlayerController::OnRep_PlayerState()
