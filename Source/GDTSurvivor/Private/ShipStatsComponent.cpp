@@ -116,7 +116,7 @@ bool UShipStatsComponent::ApplyIncomingDamage(float Damage)
 	if (IsDead())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
-		OnDeath.Broadcast();
+		OnDeath.Broadcast(this);
 		return true;
 	}
 

@@ -46,7 +46,8 @@ struct GDTSURVIVOR_API FShipStatModifier
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipResourceChanged, float, Current, float, Max);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatChanged, EShipStat, Stat, float, NewValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShipDeath);
+class UShipStatsComponent;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipDeath, UShipStatsComponent*, Stats);
 
 /**
  * Single owner of the player ship's combat values: health, shield (incl. recharge), fire rate,

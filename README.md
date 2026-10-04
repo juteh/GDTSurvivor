@@ -21,6 +21,7 @@ Responsibilities, communication rules and what is stored where: [Docs/Architectu
 
 Guides:
 - [Adding an upgrade](Docs/Guides/AddingAnUpgrade.md)
+- [Adding an objective](Docs/Guides/AddingAnObjective.md)
 
 ## Project Structure
  
