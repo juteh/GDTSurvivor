@@ -2,7 +2,9 @@
 
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
+#include "Engine/GameInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "RunStateSubsystem.h"
 #include "UpgradeCatalog.h"
 #include "UpgradeDefinition.h"
 
@@ -33,10 +35,23 @@ void AShipPlayerState::AddScore(int32 Amount)
 	OnScoreChanged.Broadcast(GetScoreAsInt());
 }
 
-void AShipPlayerState::RestoreScoreFromRunState(int32 SavedScore)
+void AShipPlayerState::BeginPlay()
 {
-	SetScore(SavedScore);
-	OnScoreChanged.Broadcast(GetScoreAsInt());
+	Super::BeginPlay();
+
+	// Same rule as the ship's health: the run state belongs to the local campaign only.
+	if (!HasAuthority() || GetNetMode() != NM_Standalone)
+	{
+		return;
+	}
+
+	const UGameInstance* GameInstance = GetGameInstance();
+	const URunStateSubsystem* RunState = GameInstance ? GameInstance->GetSubsystem<URunStateSubsystem>() : nullptr;
+	if (RunState && RunState->HasRun())
+	{
+		SetScore(RunState->GetScore());
+		OnScoreChanged.Broadcast(GetScoreAsInt());
+	}
 }
 
 void AShipPlayerState::OnRep_Score()

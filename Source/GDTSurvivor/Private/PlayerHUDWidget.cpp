@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GDTSurvivor/PlayerSpaceShipPawn.h"
 #include "ShipPlayerState.h"
 #include "ShipStatsComponent.h"
 #include "UpgradeDefinition.h"
@@ -28,6 +29,11 @@ void UPlayerHUDWidget::NativeDestruct()
 	UnbindFromStats();
 	UnbindFromPlayerState();
 
+	if (APlayerSpaceShipPawn* Ship = BoundShip.Get())
+	{
+		Ship->OnWeaponChanged.RemoveDynamic(this, &UPlayerHUDWidget::HandleWeaponChanged);
+	}
+
 	if (APlayerController* PlayerController = GetOwningPlayer())
 	{
 		PlayerController->GetOnNewPawnNotifier().Remove(PawnChangedHandle);
@@ -40,11 +46,26 @@ void UPlayerHUDWidget::HandlePawnChanged(APawn* NewPawn)
 {
 	BindToStats(NewPawn ? NewPawn->FindComponentByClass<UShipStatsComponent>() : nullptr);
 
+	if (APlayerSpaceShipPawn* OldShip = BoundShip.Get())
+	{
+		OldShip->OnWeaponChanged.RemoveDynamic(this, &UPlayerHUDWidget::HandleWeaponChanged);
+	}
+	BoundShip = Cast<APlayerSpaceShipPawn>(NewPawn);
+	if (APlayerSpaceShipPawn* Ship = BoundShip.Get())
+	{
+		Ship->OnWeaponChanged.AddUniqueDynamic(this, &UPlayerHUDWidget::HandleWeaponChanged);
+	}
+
 	// The player state usually exists before the HUD; this also catches the case where it arrives later.
 	if (!BoundPlayerState.IsValid())
 	{
 		BindToPlayerState(GetOwningPlayerState<AShipPlayerState>());
 	}
+}
+
+void UPlayerHUDWidget::HandleWeaponChanged(const FString& WeaponName)
+{
+	OnSelectedWeaponChanged(WeaponName);
 }
 
 // Ship stats

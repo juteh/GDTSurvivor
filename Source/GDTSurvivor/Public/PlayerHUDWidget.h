@@ -6,6 +6,7 @@
 
 class AShipPlayerState;
 class APawn;
+class APlayerSpaceShipPawn;
 class UPanelWidget;
 class UProgressBar;
 class UShipStatsComponent;
@@ -26,6 +27,10 @@ class GDTSURVIVOR_API UPlayerHUDWidget : public UCommonActivatableWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+
+	// The player switched weapons; the Blueprint swaps the weapon icon.
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+	void OnSelectedWeaponChanged(const FString& WeaponName);
 
 	// One line per chosen upgrade in VerticalBox_UpgradeEntries.
 	UPROPERTY(EditDefaultsOnly, Category = "HUD")
@@ -62,6 +67,11 @@ private:
 	// Ship stats (health, shield)
 
 	void HandlePawnChanged(APawn* NewPawn);
+
+	UFUNCTION()
+	void HandleWeaponChanged(const FString& WeaponName);
+
+	TWeakObjectPtr<APlayerSpaceShipPawn> BoundShip;
 
 	void BindToStats(UShipStatsComponent* Stats);
 	void UnbindFromStats();

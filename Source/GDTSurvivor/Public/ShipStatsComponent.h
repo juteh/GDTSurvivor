@@ -54,8 +54,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShipDeath);
  * sources (level-ups, permanent upgrades, later buffs). Listeners (HUD, pawn) react to events;
  * nobody else stores a copy of these values. See Docs/Architecture.md.
  *
- * Permanent upgrades are applied here on BeginPlay. Level-up modifiers are pushed by the owning
- * pawn whenever the player state's chosen upgrades change.
+ * On BeginPlay this applies the permanent upgrades (UMetaProgressionSubsystem) and, in single player,
+ * the health and shield carried over from the previous campaign level (URunStateSubsystem).
+ * Level-up modifiers are pushed by the owning pawn whenever the player state's chosen upgrades change.
  */
 UCLASS(ClassGroup = (GDTSurvivor), meta = (BlueprintSpawnableComponent))
 class GDTSURVIVOR_API UShipStatsComponent : public UActorComponent
@@ -111,10 +112,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void Heal(float Amount);
 
-	// Restores health and shield carried over from the previous campaign level ("state" save).
-	// Uses the saved fill ratio, so upgrades that raised the maximum since then are kept.
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void RestoreFromRunState(float SavedHealth, float SavedMaxHealth, float SavedShield, float SavedMaxShield);
+	// Current / maximum, 0..1. Stored in the run state when a level is completed.
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetHealthFraction() const { return MaxHealth > 0.f ? Health / MaxHealth : 0.f; }
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetShieldFraction() const { return MaxShield > 0.f ? Shield / MaxShield : 0.f; }
 
 	// Events
 
@@ -158,6 +161,8 @@ private:
 	void RecalculateStats(const TSet<EShipStat>& Stats);
 
 	void ApplyPermanentUpgrades();
+
+	void ApplyRunState();
 
 	void SetHealth(float NewHealth);
 	void SetShield(float NewShield);

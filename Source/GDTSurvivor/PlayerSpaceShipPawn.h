@@ -13,6 +13,8 @@ class UPrimitiveComponent;
 class UWidget;
 struct FHitResult;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponChanged, const FString&, WeaponName);
+
 UCLASS()
 class GDTSURVIVOR_API APlayerSpaceShipPawn : public APawn
 {
@@ -83,6 +85,17 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	int CurrentWeapon = 0;
+
+	// Called by the weapon switch (Blueprint) after CurrentWeapon changed: plays WeaponSwitchSound
+	// and broadcasts OnWeaponChanged, e.g. for the HUD's weapon icon.
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void NotifyWeaponChanged(const FString& WeaponName);
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnWeaponChanged OnWeaponChanged;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* WeaponSwitchSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* InputMappingContext;

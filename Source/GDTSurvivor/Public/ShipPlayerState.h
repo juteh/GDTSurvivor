@@ -47,10 +47,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerState")
 	void AddScore(int32 Amount);
 
-	// Restores the score carried over from the previous campaign level ("state" save).
-	UFUNCTION(BlueprintCallable, Category = "PlayerState")
-	void RestoreScoreFromRunState(int32 SavedScore);
-
 	UFUNCTION(BlueprintPure, Category = "PlayerState")
 	int32 GetScoreAsInt() const { return FMath::RoundToInt(GetScore()); }
 
@@ -100,6 +96,9 @@ public:
 	FOnShipUpgradesChanged OnUpgradesChanged;
 
 protected:
+	// Takes the score carried over from the previous campaign level (URunStateSubsystem).
+	virtual void BeginPlay() override;
+
 	virtual void OnRep_Score() override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "PlayerState", meta = (ClampMin = "1"))

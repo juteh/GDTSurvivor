@@ -2,6 +2,7 @@
 
 #include "CommonButtonBase.h"
 #include "Components/TextBlock.h"
+#include "ShipPlayerController.h"
 #include "ShipPlayerState.h"
 #include "UpgradeDefinition.h"
 
@@ -53,12 +54,12 @@ void ULevelUpSelectionWidget::HandleOptionClicked(int32 OptionIndex)
 	{
 		PlayerState->AddUpgradeStack(Options[OptionIndex]);
 	}
-	OnSelectionFinished();
+	FinishSelection();
 }
 
 void ULevelUpSelectionWidget::HandleSkipClicked()
 {
-	OnSelectionFinished();
+	FinishSelection();
 }
 
 void ULevelUpSelectionWidget::SetButtonLabel(UCommonButtonBase* Button, const FText& Label)
@@ -66,5 +67,13 @@ void ULevelUpSelectionWidget::SetButtonLabel(UCommonButtonBase* Button, const FT
 	if (UTextBlock* Text = Cast<UTextBlock>(Button->GetWidgetFromName(TEXT("ButtonBaseText"))))
 	{
 		Text->SetText(Label);
+	}
+}
+
+void ULevelUpSelectionWidget::FinishSelection()
+{
+	if (AShipPlayerController* PlayerController = GetOwningPlayer<AShipPlayerController>())
+	{
+		PlayerController->CloseLevelUpSelection();
 	}
 }

@@ -149,12 +149,13 @@ tiles. Code reads them; nobody hardcodes these values in graphs.
 | Slot | SaveGame class | Owner | Contents | Written when |
 |---|---|---|---|---|
 | `metaprogression` | `UMetaProgressionSaveGame` | `UMetaProgressionSubsystem` | Money, spent money, upgrade levels | Immediately on every change |
-| `state` | `StateSave` (BP) | → `RunState` subsystem (planned) | Run data between campaign levels | Level completed |
+| `runstate` | `URunStateSaveGame` | `URunStateSubsystem` | Player name, completed levels, score and health/shield fill ratio carried into the next level | New game, name entered, level completed |
 | `settings` | `SettingsSave` (BP) | → Settings subsystem (planned) | Graphics/audio/input settings | Settings applied |
 | `highscore` | `HighscoreSave` (BP) | → Highscore subsystem (planned) | Name + score list | Run finished |
 
-**Applying saved data at level start:** the subsystem only *provides* data. The GameMode (or the pawn's stats
-component on spawn) asks for it **once**, at a single, documented place, and turns it into modifiers.
+**Applying saved data at level start:** the subsystem only *provides* data. The owner of the value asks for it
+**once**, at a single, documented place, when it begins play: `UShipStatsComponent` takes permanent upgrades and
+the carried health/shield, `AShipPlayerState` takes the carried score.
 Loading the same slot in several classes leads to values overwriting each other (this happened with the
 permanent health/shield upgrades).
 
@@ -197,8 +198,12 @@ Known places that do not follow this document yet, in planned order:
 - [x] **Stats are spread over four places** → `UShipStatsComponent` on the player ship (health, shield incl. recharge, fire rate, damage, pickup range; level-up and permanent upgrades as modifiers). Enemies still use `BP_HealthComponent`.
 - [x] **HUD is updated from outside** → `UPlayerHUDWidget` (parent of `WBP_HUD`) listens to `UShipStatsComponent` (health, shield) and `AShipPlayerState` (score, level, experience, upgrade list). `UpdatePlayerHUD` / `UpdateLevelHUD` are gone.
 - [x] **Upgrades are hardcoded** → one `UUpgradeDefinition` per upgrade in `Core/Upgrades/`, listed in `DA_UpgradeCatalog` (set in Project Settings > Game > GDTSurvivor). Level-up choice, permanent shop, HUD list and ship stats all read the definitions; `EUpgradeType` and the byte/if-chains are gone. *The shop still has six fixed rows in the designer.*
-- [ ] **`state` slot is loaded by both `BP_GameMode_Base` (score) and `BP_PlayerSpaceShipPawn` (health/shield via `ShipStats.RestoreFromRunState`).** → `RunState` subsystem, applied once.
-- [ ] **GameMode creates widgets** (HUD, tutorial, level-up, result board). → PlayerController / `AHUD`.
+- [x] **`state` slot was loaded and written by eight Blueprints** → `URunStateSubsystem` (slot `runstate`). Menus call it; ship stats and player state read their start values from it; `CheckWinCondition` calls `RecordLevelCompleted`.
+- [ ] **Highscore and settings saves are Blueprint SaveGames** (`HighscoreSave`, `SettingsSave`) loaded by several widgets and the GameMode. → Highscore and Settings subsystems.
+- [x] **GameMode creates widgets** → `AShipPlayerController` (parent of `BP_SpaceShipPC`) creates HUD and tutorial, shows the pause menu, queues the level-up selection on `AShipPlayerState.OnLevelUp`, and shows the end screens. The GameMode only calls `ShowMatchResultForAllPlayers(Victory/Defeat/Results)`. The weapon icon follows `APlayerSpaceShipPawn.OnWeaponChanged`.
+- [ ] **Objective HUD is still created and updated by the GameMode** (`ObjectiveHUD`: BeginPlay, ObjectiveIsCompleted, CollectMineral, CheckWinCondition, OnEnemyDetroyed). → widget listens to GameState objective events.
+- [ ] **The pawn decides the defeat** (`EventAnyDamage` calls `OnLoseConditionMet`, `UnregisterPlayer`, `CheckWinCondition` on the GameMode). → pawn broadcasts `OnDeath`, the GameMode listens and decides.
+- [ ] **Input lives on the pawn** (pause, tutorial and player-list keys forward to the controller). → input mapping on the PlayerController.
 - [ ] **`GameState.ALL_PCs` stores PlayerControllers.** → use `PlayerArray`.
 - [ ] **`GetPlayerPawn(0)` in gameplay code** (GameMode, components, pickups). → owner / instigator.
 - [x] **Score lives in `BP_ScoreComponent` on the pawn** → `AShipPlayerState.AddScore`; pickups reward the overlapping player via `GetShipPlayerState(Actor)`.

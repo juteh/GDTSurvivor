@@ -11,8 +11,8 @@ class UUpgradeDefinition;
 /**
  * Parent class of WBP_LevelUpSelection. Rolls up to three level-up options from the owning
  * player's state, shows them on the option buttons and adds the chosen one to the player state
- * (the ship's stats follow from there). Closing and resuming the game is left to the Blueprint
- * via OnSelectionFinished.
+ * (the ship's stats follow from there). Closing and resuming the game is done by the owning
+ * AShipPlayerController.
  */
 UCLASS(Abstract)
 class GDTSURVIVOR_API ULevelUpSelectionWidget : public UCommonActivatableWidget
@@ -22,10 +22,6 @@ class GDTSURVIVOR_API ULevelUpSelectionWidget : public UCommonActivatableWidget
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
-
-	// Called after an option was chosen or the selection was skipped.
-	UFUNCTION(BlueprintImplementableEvent, Category = "LevelUp")
-	void OnSelectionFinished();
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UCommonButtonBase> WBP_ButtonBase_Upgrade_1;
@@ -43,6 +39,8 @@ private:
 	void HandleOptionClicked(int32 OptionIndex);
 
 	void HandleSkipClicked();
+
+	void FinishSelection();
 
 	// Sets the visible text of a WBP_ButtonBase (its "ButtonBaseText" child).
 	static void SetButtonLabel(UCommonButtonBase* Button, const FText& Label);

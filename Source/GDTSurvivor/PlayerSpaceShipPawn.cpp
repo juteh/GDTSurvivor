@@ -635,3 +635,12 @@ AActor* APlayerSpaceShipPawn::FindClosestTarget(const FName Tag)
 {
 	return FindClosestActor(MaxDistanceForSearchingActors, Tag);
 }
+
+void APlayerSpaceShipPawn::NotifyWeaponChanged(const FString& WeaponName)
+{
+	if (WeaponSwitchSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, WeaponSwitchSound, GetActorLocation());
+	}
+	OnWeaponChanged.Broadcast(WeaponName);
+}

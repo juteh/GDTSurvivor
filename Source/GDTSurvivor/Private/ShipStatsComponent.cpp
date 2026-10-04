@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "MetaProgressionSubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "RunStateSubsystem.h"
 #include "TimerManager.h"
 #include "UpgradeCatalog.h"
 #include "UpgradeDefinition.h"
@@ -41,6 +42,7 @@ void UShipStatsComponent::BeginPlay()
 	if (GetOwner()->HasAuthority())
 	{
 		ApplyPermanentUpgrades();
+		ApplyRunState();
 	}
 }
 
@@ -130,16 +132,24 @@ void UShipStatsComponent::Heal(float Amount)
 	}
 }
 
-void UShipStatsComponent::RestoreFromRunState(float SavedHealth, float SavedMaxHealth, float SavedShield, float SavedMaxShield)
+void UShipStatsComponent::ApplyRunState()
 {
-	if (SavedMaxHealth > 0.f)
+	// The run state belongs to the local campaign; multiplayer matches always start fresh.
+	if (GetNetMode() != NM_Standalone)
 	{
-		SetHealth(MaxHealth * FMath::Clamp(SavedHealth / SavedMaxHealth, 0.f, 1.f));
+		return;
 	}
-	if (SavedMaxShield > 0.f)
+
+	const UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+	const URunStateSubsystem* RunState = GameInstance ? GameInstance->GetSubsystem<URunStateSubsystem>() : nullptr;
+	if (!RunState || !RunState->HasRun())
 	{
-		SetShield(MaxShield * FMath::Clamp(SavedShield / SavedMaxShield, 0.f, 1.f));
+		return;
 	}
+
+	// At least one point, so a level can never start with a dead ship.
+	SetHealth(FMath::Max(1.f, MaxHealth * RunState->GetHealthFraction()));
+	SetShield(MaxShield * RunState->GetShieldFraction());
 	StartShieldRecharge();
 }
 
