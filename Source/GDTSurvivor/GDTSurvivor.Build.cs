@@ -12,7 +12,7 @@ public class GDTSurvivor : ModuleRules
 
 
 		// private -> only build in .cpp
-		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI" });
 
 		// Tile baking in EndlessTileAuthoring (editor only)
 		if (Target.bBuildEditor)
