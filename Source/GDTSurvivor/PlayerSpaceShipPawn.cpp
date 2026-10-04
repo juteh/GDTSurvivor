@@ -25,7 +25,9 @@
 #include "Components/Widget.h"
 #include "EngineUtils.h"
 #include "MineralAsteroid.h"
+#include "ShipPlayerState.h"
 #include "ShipStatsComponent.h"
+#include "UpgradeDefinition.h"
 
 // Sets default values
 APlayerSpaceShipPawn::APlayerSpaceShipPawn()
@@ -128,6 +130,37 @@ void APlayerSpaceShipPawn::BeginThrusterFX()
 	ThrusterFXNiagaraComponentRightFront = CreateThrusterFX(FVector(0,40,0),
 		FRotator(0,10,0),FVector(0.3, 0.3, 0.3)
 	);
+}
+
+void APlayerSpaceShipPawn::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
+{
+	Super::OnPlayerStateChanged(NewPlayerState, OldPlayerState);
+
+	if (AShipPlayerState* OldShipPlayerState = Cast<AShipPlayerState>(OldPlayerState))
+	{
+		OldShipPlayerState->OnUpgradesChanged.RemoveDynamic(this, &APlayerSpaceShipPawn::HandleUpgradesChanged);
+	}
+	if (AShipPlayerState* NewShipPlayerState = Cast<AShipPlayerState>(NewPlayerState))
+	{
+		NewShipPlayerState->OnUpgradesChanged.AddUniqueDynamic(this, &APlayerSpaceShipPawn::HandleUpgradesChanged);
+	}
+	HandleUpgradesChanged();
+}
+
+void APlayerSpaceShipPawn::HandleUpgradesChanged()
+{
+	TArray<FShipStatModifier> LevelUpModifiers;
+	if (const AShipPlayerState* ShipPlayerState = GetPlayerState<AShipPlayerState>())
+	{
+		for (const FUpgradeStack& Stack : ShipPlayerState->GetUpgradeStacks())
+		{
+			if (Stack.Upgrade)
+			{
+				Stack.Upgrade->AppendModifiers(Stack.Stacks, UShipStatsComponent::LevelUpSource, LevelUpModifiers);
+			}
+		}
+	}
+	ShipStats->SetModifiersForSource(UShipStatsComponent::LevelUpSource, LevelUpModifiers);
 }
 
 void APlayerSpaceShipPawn::BeginPlay()

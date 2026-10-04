@@ -3,12 +3,8 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
-
-AShipPlayerState::AShipPlayerState()
-{
-	// NumEnums() includes the generated _MAX entry.
-	UpgradeStacks.Init(0, StaticEnum<EUpgradeType>()->NumEnums() - 1);
-}
+#include "UpgradeCatalog.h"
+#include "UpgradeDefinition.h"
 
 void AShipPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -66,18 +62,54 @@ bool AShipPlayerState::AddExperience(int32 Amount)
 	return bLeveledUp;
 }
 
-void AShipPlayerState::AddUpgradeStack(uint8 Type)
+void AShipPlayerState::AddUpgradeStack(const UUpgradeDefinition* Upgrade)
 {
-	if (UpgradeStacks.IsValidIndex(Type))
+	if (!Upgrade)
 	{
-		++UpgradeStacks[Type];
-		OnUpgradesChanged.Broadcast();
+		return;
 	}
+
+	FUpgradeStack* Entry = UpgradeStacks.FindByPredicate([Upgrade](const FUpgradeStack& Stack) { return Stack.Upgrade == Upgrade; });
+	if (!Entry)
+	{
+		Entry = &UpgradeStacks.AddDefaulted_GetRef();
+		// Definitions are read-only assets; the stack only references them.
+		Entry->Upgrade = const_cast<UUpgradeDefinition*>(Upgrade);
+	}
+	++Entry->Stacks;
+	OnUpgradesChanged.Broadcast();
 }
 
-int32 AShipPlayerState::GetUpgradeStackCount(uint8 Type) const
+int32 AShipPlayerState::GetUpgradeStackCount(const UUpgradeDefinition* Upgrade) const
 {
-	return UpgradeStacks.IsValidIndex(Type) ? UpgradeStacks[Type] : 0;
+	const FUpgradeStack* Entry = UpgradeStacks.FindByPredicate([Upgrade](const FUpgradeStack& Stack) { return Stack.Upgrade == Upgrade; });
+	return Entry ? Entry->Stacks : 0;
+}
+
+TArray<UUpgradeDefinition*> AShipPlayerState::GetLevelUpOptions(int32 Count) const
+{
+	TArray<UUpgradeDefinition*> Options;
+	const UUpgradeCatalog* Catalog = UUpgradeCatalog::Get();
+	if (!Catalog)
+	{
+		return Options;
+	}
+
+	for (UUpgradeDefinition* Upgrade : Catalog->Upgrades)
+	{
+		if (Upgrade && Upgrade->bOfferAsLevelUp && GetUpgradeStackCount(Upgrade) < Upgrade->MaxLevelUpStacks)
+		{
+			Options.Add(Upgrade);
+		}
+	}
+
+	// Fisher-Yates shuffle, then keep the first Count.
+	for (int32 Index = Options.Num() - 1; Index > 0; --Index)
+	{
+		Options.Swap(Index, FMath::RandRange(0, Index));
+	}
+	Options.SetNum(FMath::Min(Count, Options.Num()));
+	return Options;
 }
 
 void AShipPlayerState::BroadcastExperience()

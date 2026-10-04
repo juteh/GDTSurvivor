@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "GDTSurvivor/LevelUpOption.h"
 #include "ShipStatsComponent.generated.h"
 
 // Values of the player ship that upgrades (and later buffs) can change.
@@ -54,6 +53,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShipDeath);
  * damage bonus and pickup range. Every stat is a base value plus modifiers from different
  * sources (level-ups, permanent upgrades, later buffs). Listeners (HUD, pawn) react to events;
  * nobody else stores a copy of these values. See Docs/Architecture.md.
+ *
+ * Permanent upgrades are applied here on BeginPlay. Level-up modifiers are pushed by the owning
+ * pawn whenever the player state's chosen upgrades change.
  */
 UCLASS(ClassGroup = (GDTSurvivor), meta = (BlueprintSpawnableComponent))
 class GDTSURVIVOR_API UShipStatsComponent : public UActorComponent
@@ -80,13 +82,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	int32 RemoveModifiersFromSource(FName Source);
 
-	// Adds the modifiers of one stack of an upgrade.
-	void AddUpgradeStack(EUpgradeType Type, FName Source);
-
-	// Level-up entry point for Blueprints. UpgradeType is an EUpgradeType value as byte,
-	// because Blueprint function parameters in BP_GameMode_Base can't use the C++ enum.
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void AddLevelUpStack(uint8 UpgradeType);
+	// Replaces all modifiers of Source with NewModifiers. Every affected stat is recalculated once,
+	// so a raised maximum only fills health/shield by the net difference.
+	void SetModifiersForSource(FName Source, const TArray<FShipStatModifier>& NewModifiers);
 
 	// Health and shield
 
@@ -156,6 +154,8 @@ private:
 	static float GetMinValue(EShipStat Stat);
 
 	void RecalculateStat(EShipStat Stat);
+
+	void RecalculateStats(const TSet<EShipStat>& Stats);
 
 	void ApplyPermanentUpgrades();
 

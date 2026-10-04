@@ -103,6 +103,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	// Keeps ShipStats' level-up modifiers in sync with the upgrades chosen in the player state.
+	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
+
+	UFUNCTION()
+	void HandleUpgradesChanged();
+
 	void BeginThrusterFX();
 	
 	void TickThrusterFX(float DeltaTime);

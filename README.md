@@ -19,6 +19,9 @@ Tools:
 
 Responsibilities, communication rules and what is stored where: [Docs/Architecture.md](Docs/Architecture.md)
 
+Guides:
+- [Adding an upgrade](Docs/Guides/AddingAnUpgrade.md)
+
 ## Project Structure
  
  ```

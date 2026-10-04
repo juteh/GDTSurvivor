@@ -171,7 +171,11 @@ UpgradeDefinition (Data Asset)          PlayerState                 Pawn: ShipSt
 ```
 
 - A level-up and a permanent upgrade use the **same definition and the same code path**; only the source differs.
-- Adding a new upgrade = adding a Data Asset (+ a stat if it is a new kind of value).
+- Adding a new upgrade = creating a `UUpgradeDefinition` asset with a unique `UpgradeId` and adding it to
+  `DA_UpgradeCatalog` (+ a new `EShipStat` if it changes a new kind of value). Never change an existing
+  `UpgradeId`: save games store it. Step-by-step: [Guides/AddingAnUpgrade.md](Guides/AddingAnUpgrade.md).
+- The ship's level-up modifiers are derived from the player state: `AShipPlayerState.OnUpgradesChanged` →
+  `APlayerSpaceShipPawn::HandleUpgradesChanged` → `UShipStatsComponent::SetModifiersForSource`.
 - This model maps closely to the Gameplay Ability System (AttributeSet + GameplayEffects), which is planned
   for buffs and abilities later.
 
@@ -192,7 +196,7 @@ Known places that do not follow this document yet, in planned order:
 
 - [x] **Stats are spread over four places** → `UShipStatsComponent` on the player ship (health, shield incl. recharge, fire rate, damage, pickup range; level-up and permanent upgrades as modifiers). Enemies still use `BP_HealthComponent`.
 - [x] **HUD is updated from outside** → `UPlayerHUDWidget` (parent of `WBP_HUD`) listens to `UShipStatsComponent` (health, shield) and `AShipPlayerState` (score, level, experience, upgrade list). `UpdatePlayerHUD` / `UpdateLevelHUD` are gone.
-- [ ] **Upgrades are hardcoded** → upgrade Data Assets. *Remaining: effect values in `UShipStatsComponent::AddUpgradeStack`, names/descriptions in `BP_GameMode_Base.GetUpgradeDisplayName/GetUpgradeDescription` and `UpgradeSelectionWidget`, max stacks (10) in `ShowLevelUpUI`/`PopulateOptionSlot`, upgrade types passed as byte.*
+- [x] **Upgrades are hardcoded** → one `UUpgradeDefinition` per upgrade in `Core/Upgrades/`, listed in `DA_UpgradeCatalog` (set in Project Settings > Game > GDTSurvivor). Level-up choice, permanent shop, HUD list and ship stats all read the definitions; `EUpgradeType` and the byte/if-chains are gone. *The shop still has six fixed rows in the designer.*
 - [ ] **`state` slot is loaded by both `BP_GameMode_Base` (score) and `BP_PlayerSpaceShipPawn` (health/shield via `ShipStats.RestoreFromRunState`).** → `RunState` subsystem, applied once.
 - [ ] **GameMode creates widgets** (HUD, tutorial, level-up, result board). → PlayerController / `AHUD`.
 - [ ] **`GameState.ALL_PCs` stores PlayerControllers.** → use `PlayerArray`.

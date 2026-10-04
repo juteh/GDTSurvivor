@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
-#include "GDTSurvivor/LevelUpOption.h"
 #include "MetaProgressionSaveGame.generated.h"
 
 /**
@@ -23,7 +22,7 @@ public:
 	UPROPERTY(SaveGame)
 	int32 SpentMoney = 0;
 
-	// Bought level per upgrade type. Missing entries mean level 0.
+	// Bought level per UUpgradeDefinition::UpgradeId. Missing entries mean level 0.
 	UPROPERTY(SaveGame)
-	TMap<EUpgradeType, int32> UpgradeLevels;
+	TMap<FName, int32> UpgradeLevelsById;
 };

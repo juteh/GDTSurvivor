@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "ShipPlayerState.h"
 #include "ShipStatsComponent.h"
+#include "UpgradeDefinition.h"
 #include "UpgradeEntryWidget.h"
 
 #define LOCTEXT_NAMESPACE "PlayerHUD"
@@ -144,19 +145,16 @@ void UPlayerHUDWidget::HandleUpgradesChanged()
 
 	VerticalBox_UpgradeEntries->ClearChildren();
 
-	const UEnum* UpgradeEnum = StaticEnum<EUpgradeType>();
-	// NumEnums() includes the generated _MAX entry.
-	for (int32 Index = 0; Index < UpgradeEnum->NumEnums() - 1; ++Index)
+	// In the order the upgrades were first chosen.
+	for (const FUpgradeStack& Stack : PlayerState->GetUpgradeStacks())
 	{
-		const uint8 Type = static_cast<uint8>(UpgradeEnum->GetValueByIndex(Index));
-		const int32 Stacks = PlayerState->GetUpgradeStackCount(Type);
-		if (Stacks <= 0)
+		if (!Stack.Upgrade || Stack.Stacks <= 0)
 		{
 			continue;
 		}
 
 		UUpgradeEntryWidget* Entry = CreateWidget<UUpgradeEntryWidget>(GetOwningPlayer(), UpgradeEntryClass);
-		Entry->SetEntry(UpgradeEnum->GetDisplayNameTextByIndex(Index), Stacks);
+		Entry->SetEntry(Stack.Upgrade->DisplayName, Stack.Stacks);
 		VerticalBox_UpgradeEntries->AddChild(Entry);
 	}
 }

@@ -4,37 +4,47 @@
 #include "Components/TextBlock.h"
 #include "Engine/GameInstance.h"
 #include "MetaProgressionSubsystem.h"
+#include "UpgradeCatalog.h"
+#include "UpgradeDefinition.h"
 
 #define LOCTEXT_NAMESPACE "UpgradeSelection"
-
-UUpgradeSelectionWidget::UUpgradeSelectionWidget(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-{
-	UpgradeNames.Add(EUpgradeType::FireRate, LOCTEXT("FireRate", "Firerate"));
-	UpgradeNames.Add(EUpgradeType::Health, LOCTEXT("Health", "Life"));
-	UpgradeNames.Add(EUpgradeType::Shield, LOCTEXT("Shield", "Shield"));
-	UpgradeNames.Add(EUpgradeType::ShieldRegen, LOCTEXT("ShieldRegen", "Shieldrate"));
-	UpgradeNames.Add(EUpgradeType::Damage, LOCTEXT("Damage", "Damage"));
-	UpgradeNames.Add(EUpgradeType::PickupRange, LOCTEXT("PickupRange", "Magnet"));
-}
 
 void UUpgradeSelectionWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	Rows = {
-		{EUpgradeType::FireRate, WBP_ButtonBase_Buy_1, CommonTextBlock_Upgrade_1},
-		{EUpgradeType::Health, WBP_ButtonBase_Buy_2, CommonTextBlock_Upgrade_2},
-		{EUpgradeType::Shield, WBP_ButtonBase_Buy_3, CommonTextBlock_Upgrade_3},
-		{EUpgradeType::ShieldRegen, WBP_ButtonBase_Buy_4, CommonTextBlock_Upgrade_4},
-		{EUpgradeType::Damage, WBP_ButtonBase_Buy_5, CommonTextBlock_Upgrade_5},
-		{EUpgradeType::PickupRange, WBP_ButtonBase_Buy_6, CommonTextBlock_Upgrade_6},
+		{WBP_ButtonBase_Buy_1, CommonTextBlock_Upgrade_1},
+		{WBP_ButtonBase_Buy_2, CommonTextBlock_Upgrade_2},
+		{WBP_ButtonBase_Buy_3, CommonTextBlock_Upgrade_3},
+		{WBP_ButtonBase_Buy_4, CommonTextBlock_Upgrade_4},
+		{WBP_ButtonBase_Buy_5, CommonTextBlock_Upgrade_5},
+		{WBP_ButtonBase_Buy_6, CommonTextBlock_Upgrade_6},
 	};
 
-	for (const FUpgradeRow& Row : Rows)
+	// Fill the rows in catalog order with the upgrades that are sold as permanent.
+	int32 RowIndex = 0;
+	if (const UUpgradeCatalog* Catalog = UUpgradeCatalog::Get())
 	{
-		const EUpgradeType Type = Row.Type;
-		Row.BuyButton->OnClicked().AddWeakLambda(this, [this, Type]() { HandleBuyClicked(Type); });
+		for (const UUpgradeDefinition* Upgrade : Catalog->Upgrades)
+		{
+			if (Upgrade && Upgrade->bSellAsPermanent && Rows.IsValidIndex(RowIndex))
+			{
+				Rows[RowIndex++].Upgrade = Upgrade;
+			}
+		}
+	}
+
+	for (int32 Index = 0; Index < Rows.Num(); ++Index)
+	{
+		const FUpgradeRow& Row = Rows[Index];
+		if (!Row.Upgrade)
+		{
+			Row.BuyButton->SetVisibility(ESlateVisibility::Collapsed);
+			Row.Text->SetVisibility(ESlateVisibility::Collapsed);
+			continue;
+		}
+		Row.BuyButton->OnClicked().AddWeakLambda(this, [this, Index]() { HandleBuyClicked(Index); });
 	}
 
 	if (WBP_ButtonBase_Reset)
@@ -76,24 +86,29 @@ void UUpgradeSelectionWidget::Refresh()
 
 	for (const FUpgradeRow& Row : Rows)
 	{
-		const int32 Level = MetaProgression->GetUpgradeLevel(Row.Type);
-		const int32 MaxLevel = MetaProgression->GetMaxUpgradeLevel(Row.Type);
-		const FText Name = UpgradeNames.FindRef(Row.Type);
+		if (!Row.Upgrade)
+		{
+			continue;
+		}
+
+		const int32 Level = MetaProgression->GetUpgradeLevel(Row.Upgrade);
+		const int32 MaxLevel = Row.Upgrade->MaxPermanentLevel;
 
 		const FText Text = Level >= MaxLevel
-			? FText::Format(LOCTEXT("RowMaxed", "{0} {1}/{2} MAX"), Name, Level, MaxLevel)
-			: FText::Format(LOCTEXT("Row", "{0} {1}/{2} Cost: {3}"), Name, Level, MaxLevel, MetaProgression->GetUpgradeCost(Row.Type));
+			? FText::Format(LOCTEXT("RowMaxed", "{0} {1}/{2} MAX"), Row.Upgrade->DisplayName, Level, MaxLevel)
+			: FText::Format(LOCTEXT("Row", "{0} {1}/{2} Cost: {3}"), Row.Upgrade->DisplayName, Level, MaxLevel, Row.Upgrade->PermanentCost);
 		Row.Text->SetText(Text);
 
-		Row.BuyButton->SetIsEnabled(MetaProgression->CanBuyUpgrade(Row.Type));
+		Row.BuyButton->SetIsEnabled(MetaProgression->CanBuyUpgrade(Row.Upgrade));
 	}
 }
 
-void UUpgradeSelectionWidget::HandleBuyClicked(EUpgradeType Type)
+void UUpgradeSelectionWidget::HandleBuyClicked(int32 RowIndex)
 {
-	if (UMetaProgressionSubsystem* MetaProgression = GetMetaProgression())
+	UMetaProgressionSubsystem* MetaProgression = GetMetaProgression();
+	if (MetaProgression && Rows.IsValidIndex(RowIndex))
 	{
-		MetaProgression->BuyUpgrade(Type);
+		MetaProgression->BuyUpgrade(Rows[RowIndex].Upgrade);
 	}
 }
 

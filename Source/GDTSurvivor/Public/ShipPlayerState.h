@@ -2,8 +2,22 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
-#include "GDTSurvivor/LevelUpOption.h"
 #include "ShipPlayerState.generated.h"
+
+class UUpgradeDefinition;
+
+// How often the player chose one upgrade as level-up in this run.
+USTRUCT(BlueprintType)
+struct GDTSURVIVOR_API FUpgradeStack
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "PlayerState")
+	TObjectPtr<UUpgradeDefinition> Upgrade;
+
+	UPROPERTY(BlueprintReadOnly, Category = "PlayerState")
+	int32 Stacks = 0;
+};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipScoreChanged, int32, NewScore);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnShipExperienceChanged, int32, Experience, int32, ExperiencePerLevel, int32, Level);
@@ -22,8 +36,6 @@ class GDTSURVIVOR_API AShipPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
-	AShipPlayerState();
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Ship player state of the actor's player (pawn or controller), or null.
@@ -58,14 +70,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "PlayerState")
 	int32 GetPlayerLevel() const { return Level; }
 
-	// Level-up upgrades. Type is an EUpgradeType value as byte, because the level-up
-	// Blueprints in BP_GameMode_Base pass upgrade types as byte.
+	// Level-up upgrades
 
 	UFUNCTION(BlueprintCallable, Category = "PlayerState")
-	void AddUpgradeStack(uint8 Type);
+	void AddUpgradeStack(const UUpgradeDefinition* Upgrade);
 
 	UFUNCTION(BlueprintPure, Category = "PlayerState")
-	int32 GetUpgradeStackCount(uint8 Type) const;
+	int32 GetUpgradeStackCount(const UUpgradeDefinition* Upgrade) const;
+
+	UFUNCTION(BlueprintPure, Category = "PlayerState")
+	const TArray<FUpgradeStack>& GetUpgradeStacks() const { return UpgradeStacks; }
+
+	// Up to Count random different upgrades that can still be chosen as level-up.
+	UFUNCTION(BlueprintCallable, Category = "PlayerState")
+	TArray<UUpgradeDefinition*> GetLevelUpOptions(int32 Count) const;
 
 	// Events
 
@@ -102,7 +120,6 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Experience)
 	int32 Level = 1;
 
-	// Stack count per EUpgradeType (index = enum value). An array because TMap can't replicate.
 	UPROPERTY(ReplicatedUsing = OnRep_UpgradeStacks)
-	TArray<int32> UpgradeStacks;
+	TArray<FUpgradeStack> UpgradeStacks;
 };

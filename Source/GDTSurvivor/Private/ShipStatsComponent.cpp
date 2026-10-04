@@ -5,6 +5,8 @@
 #include "MetaProgressionSubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+#include "UpgradeCatalog.h"
+#include "UpgradeDefinition.h"
 
 const FName UShipStatsComponent::LevelUpSource = TEXT("LevelUp");
 const FName UShipStatsComponent::PermanentSource = TEXT("Permanent");
@@ -66,53 +68,31 @@ int32 UShipStatsComponent::RemoveModifiersFromSource(FName Source)
 		return true;
 	});
 
-	for (const EShipStat Stat : ChangedStats)
-	{
-		RecalculateStat(Stat);
-	}
+	RecalculateStats(ChangedStats);
 	return Removed;
 }
 
-void UShipStatsComponent::AddUpgradeStack(EUpgradeType Type, FName Source)
+void UShipStatsComponent::SetModifiersForSource(FName Source, const TArray<FShipStatModifier>& NewModifiers)
 {
-	// Effect of one upgrade stack. Moves into upgrade Data Assets (see Docs/Architecture.md, section 5).
-	FShipStatModifier Modifier;
-	Modifier.Source = Source;
-
-	switch (Type)
+	TSet<EShipStat> ChangedStats;
+	Modifiers.RemoveAll([&](const FShipStatModifier& Modifier)
 	{
-	case EUpgradeType::FireRate:
-		Modifier.Stat = EShipStat::FireIntervalMultiplier;
-		Modifier.Multiplier = 0.9f;
-		break;
-	case EUpgradeType::Damage:
-		Modifier.Stat = EShipStat::DamageBonus;
-		Modifier.Additive = 1.f;
-		break;
-	case EUpgradeType::Health:
-		Modifier.Stat = EShipStat::MaxHealth;
-		Modifier.Additive = 5.f;
-		break;
-	case EUpgradeType::Shield:
-		Modifier.Stat = EShipStat::MaxShield;
-		Modifier.Additive = 5.f;
-		break;
-	case EUpgradeType::ShieldRegen:
-		Modifier.Stat = EShipStat::ShieldRegenInterval;
-		Modifier.Multiplier = 0.9f;
-		break;
-	case EUpgradeType::PickupRange:
-		Modifier.Stat = EShipStat::PickupRangeMultiplier;
-		Modifier.Multiplier = 1.1f;
-		break;
+		if (Modifier.Source != Source)
+		{
+			return false;
+		}
+		ChangedStats.Add(Modifier.Stat);
+		return true;
+	});
+
+	for (FShipStatModifier Modifier : NewModifiers)
+	{
+		Modifier.Source = Source;
+		ChangedStats.Add(Modifier.Stat);
+		Modifiers.Add(Modifier);
 	}
 
-	AddModifier(Modifier);
-}
-
-void UShipStatsComponent::AddLevelUpStack(uint8 UpgradeType)
-{
-	AddUpgradeStack(static_cast<EUpgradeType>(UpgradeType), LevelUpSource);
+	RecalculateStats(ChangedStats);
 }
 
 bool UShipStatsComponent::ApplyIncomingDamage(float Damage)
@@ -224,25 +204,33 @@ void UShipStatsComponent::RecalculateStat(EShipStat Stat)
 	OnStatChanged.Broadcast(Stat, NewValue);
 }
 
+void UShipStatsComponent::RecalculateStats(const TSet<EShipStat>& Stats)
+{
+	for (const EShipStat Stat : Stats)
+	{
+		RecalculateStat(Stat);
+	}
+}
+
 void UShipStatsComponent::ApplyPermanentUpgrades()
 {
 	const UGameInstance* GameInstance = GetWorld()->GetGameInstance();
 	const UMetaProgressionSubsystem* MetaProgression = GameInstance ? GameInstance->GetSubsystem<UMetaProgressionSubsystem>() : nullptr;
-	if (!MetaProgression)
+	const UUpgradeCatalog* Catalog = UUpgradeCatalog::Get();
+	if (!MetaProgression || !Catalog)
 	{
 		return;
 	}
 
-	const UEnum* UpgradeEnum = StaticEnum<EUpgradeType>();
-	// NumEnums() includes the generated _MAX entry.
-	for (int32 Index = 0; Index < UpgradeEnum->NumEnums() - 1; ++Index)
+	TArray<FShipStatModifier> PermanentModifiers;
+	for (const UUpgradeDefinition* Upgrade : Catalog->Upgrades)
 	{
-		const EUpgradeType Type = static_cast<EUpgradeType>(UpgradeEnum->GetValueByIndex(Index));
-		for (int32 Level = 0; Level < MetaProgression->GetUpgradeLevel(Type); ++Level)
+		if (Upgrade)
 		{
-			AddUpgradeStack(Type, PermanentSource);
+			Upgrade->AppendModifiers(MetaProgression->GetUpgradeLevel(Upgrade), PermanentSource, PermanentModifiers);
 		}
 	}
+	SetModifiersForSource(PermanentSource, PermanentModifiers);
 }
 
 void UShipStatsComponent::SetHealth(float NewHealth)

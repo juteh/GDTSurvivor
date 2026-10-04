@@ -1,8 +1,8 @@
 #include "MetaProgressionSubsystem.h"
 
-#include "MetaProgressionSaveGame.h"
-#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "MetaProgressionSaveGame.h"
+#include "UpgradeDefinition.h"
 
 const FString UMetaProgressionSubsystem::SaveSlotName = TEXT("metaprogression");
 
@@ -17,6 +17,12 @@ void UMetaProgressionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		SaveGame->Money = StartingMoney;
 		Save();
 	}
+	else if (SaveGame->SpentMoney > 0 && SaveGame->UpgradeLevelsById.IsEmpty())
+	{
+		// Saves from before upgrade ids stored their levels per enum value, which no longer exists.
+		// Refund what was spent instead of losing it.
+		ResetUpgrades();
+	}
 }
 
 int32 UMetaProgressionSubsystem::GetMoney() const
@@ -24,37 +30,29 @@ int32 UMetaProgressionSubsystem::GetMoney() const
 	return SaveGame->Money;
 }
 
-int32 UMetaProgressionSubsystem::GetUpgradeLevel(EUpgradeType Type) const
+int32 UMetaProgressionSubsystem::GetUpgradeLevel(const UUpgradeDefinition* Upgrade) const
 {
-	return SaveGame->UpgradeLevels.FindRef(Type);
+	return Upgrade ? SaveGame->UpgradeLevelsById.FindRef(Upgrade->UpgradeId) : 0;
 }
 
-int32 UMetaProgressionSubsystem::GetMaxUpgradeLevel(EUpgradeType Type) const
+bool UMetaProgressionSubsystem::CanBuyUpgrade(const UUpgradeDefinition* Upgrade) const
 {
-	return MaxUpgradeLevel;
+	return Upgrade
+		&& Upgrade->bSellAsPermanent
+		&& GetUpgradeLevel(Upgrade) < Upgrade->MaxPermanentLevel
+		&& GetMoney() >= Upgrade->PermanentCost;
 }
 
-int32 UMetaProgressionSubsystem::GetUpgradeCost(EUpgradeType Type) const
+bool UMetaProgressionSubsystem::BuyUpgrade(const UUpgradeDefinition* Upgrade)
 {
-	return UpgradeCost;
-}
-
-bool UMetaProgressionSubsystem::CanBuyUpgrade(EUpgradeType Type) const
-{
-	return GetUpgradeLevel(Type) < GetMaxUpgradeLevel(Type) && GetMoney() >= GetUpgradeCost(Type);
-}
-
-bool UMetaProgressionSubsystem::BuyUpgrade(EUpgradeType Type)
-{
-	if (!CanBuyUpgrade(Type))
+	if (!CanBuyUpgrade(Upgrade))
 	{
 		return false;
 	}
 
-	const int32 Cost = GetUpgradeCost(Type);
-	SaveGame->Money -= Cost;
-	SaveGame->SpentMoney += Cost;
-	SaveGame->UpgradeLevels.FindOrAdd(Type)++;
+	SaveGame->Money -= Upgrade->PermanentCost;
+	SaveGame->SpentMoney += Upgrade->PermanentCost;
+	SaveGame->UpgradeLevelsById.FindOrAdd(Upgrade->UpgradeId)++;
 	HandleChanged();
 	return true;
 }
@@ -63,7 +61,7 @@ void UMetaProgressionSubsystem::ResetUpgrades()
 {
 	SaveGame->Money += SaveGame->SpentMoney;
 	SaveGame->SpentMoney = 0;
-	SaveGame->UpgradeLevels.Reset();
+	SaveGame->UpgradeLevelsById.Reset();
 	HandleChanged();
 }
 
