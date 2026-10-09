@@ -135,7 +135,8 @@ tiles. Code reads them; nobody hardcodes these values in graphs.
 | Data | Lifetime | Owner | Why there |
 |---|---|---|---|
 | Money, permanent upgrades | Forever | `UMetaProgressionSubsystem` | Must survive app restarts and all maps. |
-| Settings | Forever | Settings subsystem | Needed before any level is loaded. |
+| Settings: volumes, anti-aliasing, gamma | Forever | `UUserSettingsSubsystem` | Needed before any level is loaded. |
+| Settings: resolution, window mode, VSync, quality | Forever | Engine `UGameUserSettings` (only changed through `UUserSettingsSubsystem`) | The engine stores them in `GameUserSettings.ini` and applies them at startup. |
 | Highscores | Forever | Highscore subsystem | Shared by all runs, shown in menus. |
 | Run progress between campaign levels (score, health carried over, completed levels) | One run, across maps | `RunState` subsystem | Must survive the map change; the PlayerState is destroyed with the level. |
 | Experience, level, chosen level-ups, score | One run inside a level | PlayerState | Replicated to everyone (player list), survives pawn death. |
@@ -150,7 +151,7 @@ tiles. Code reads them; nobody hardcodes these values in graphs.
 |---|---|---|---|---|
 | `metaprogression` | `UMetaProgressionSaveGame` | `UMetaProgressionSubsystem` | Money, spent money, upgrade levels | Immediately on every change |
 | `runstate` | `URunStateSaveGame` | `URunStateSubsystem` | Player name, completed levels, score and health/shield fill ratio carried into the next level | New game, name entered, level completed |
-| `settings` | `SettingsSave` (BP) | → Settings subsystem (planned) | Graphics/audio/input settings | Settings applied |
+| `usersettings` | `UUserSettingsSaveGame` | `UUserSettingsSubsystem` | Music/effects volume, anti-aliasing, gamma | Settings menu closed (only if something changed) |
 | `highscore` | `HighscoreSave` (BP) | → Highscore subsystem (planned) | Name + score list | Run finished |
 
 **Applying saved data at level start:** the subsystem only *provides* data. The owner of the value asks for it
@@ -197,6 +198,7 @@ UpgradeDefinition (Data Asset)          PlayerState                 Pawn: ShipSt
   | `Enemies/` | Enemy behaviour, spawning |
   | `Upgrades/` | Upgrade definitions and catalog |
   | `Progression/` | Meta progression and campaign run: subsystems and their save games |
+  | `UserSettings/` | Player settings (audio, graphics): subsystem and its save game |
   | `Objectives/` | Level objectives |
   | `World/` | Endless map tiles, mineral asteroids and other level actors |
   | `UI/` | C++ parents of widgets |
@@ -218,7 +220,8 @@ Known places that do not follow this document yet, in planned order:
 - [x] **HUD is updated from outside** → `UPlayerHUDWidget` (parent of `WBP_HUD`) listens to `UShipStatsComponent` (health, shield) and `AShipPlayerState` (score, level, experience, upgrade list). `UpdatePlayerHUD` / `UpdateLevelHUD` are gone.
 - [x] **Upgrades are hardcoded** → one `UUpgradeDefinition` per upgrade in `Core/Upgrades/`, listed in `DA_UpgradeCatalog` (set in Project Settings > Game > GDTSurvivor). Level-up choice, permanent shop, HUD list and ship stats all read the definitions; `EUpgradeType` and the byte/if-chains are gone. *The shop still has six fixed rows in the designer.*
 - [x] **`state` slot was loaded and written by eight Blueprints** → `URunStateSubsystem` (slot `runstate`). Menus call it; ship stats and player state read their start values from it; `CheckWinCondition` calls `RecordLevelCompleted`.
-- [ ] **Highscore and settings saves are Blueprint SaveGames** (`HighscoreSave`, `SettingsSave`) loaded by several widgets and the GameMode. → Highscore and Settings subsystems.
+- [x] **Settings save was a Blueprint SaveGame loaded by `WBP_Settings` and the main menu level Blueprints** → `UUserSettingsSubsystem` (slot `usersettings`) applies volumes, anti-aliasing and gamma at startup and on every map; graphics stay in `UGameUserSettings`. `USettingsMenuWidget` (parent of `WBP_Settings`) only shows and forwards values. The settings menu is pushed onto `WBP_MainMenuStack`'s `MenuStack` and closes with `DeactivateWidget`.
+- [ ] **Highscore save is a Blueprint SaveGame** (`HighscoreSave`) loaded by several widgets and the GameMode. → Highscore subsystem.
 - [x] **GameMode creates widgets** → `AShipPlayerController` (parent of `BP_SpaceShipPC`) creates HUD and tutorial, shows the pause menu, queues the level-up selection on `AShipPlayerState.OnLevelUp`, and shows the end screens. The GameMode only calls `ShowMatchResultForAllPlayers(Victory/Defeat/Results)`. The weapon icon follows `APlayerSpaceShipPawn.OnWeaponChanged`.
 - [x] **Objective HUD was created and updated by the GameMode; objective types were told apart by casts** → `AObjective` (parent of `BP_ObjectiveBase`; children only set data: counted event, can complete, texts), active objective in `AShipGameState`, `UObjectiveHUDWidget` (parent of `WBP_HUD_Objective`) listens to both. The GameMode reports `ReportObjectiveEvent(MineralCollected / EnemyDestroyed)`. Step-by-step: [Guides/AddingAnObjective.md](Guides/AddingAnObjective.md).
 - [x] **The pawn decided the defeat** → `AShipGameModeBase` (parent of `BP_GameMode_Base`) listens to every player ship's `UShipStatsComponent.OnDeath` and calls `OnPlayerShipDestroyed` (Blueprint) one frame later.
