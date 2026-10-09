@@ -12,16 +12,14 @@ public class GDTSurvivor : ModuleRules
 
 
 		// private -> only build in .cpp
-		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "DeveloperSettings" });
+		// Slate/SlateCore: self-drawn HUD widgets (UI/SegmentedBar, UI/HUDRing)
+		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "DeveloperSettings", "Slate", "SlateCore" });
 
 		// Tile baking in EndlessTileAuthoring (editor only)
 		if (Target.bBuildEditor)
 		{
-			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetRegistry", "Slate", "SlateCore" });
+			PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetRegistry" });
 		}
-
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");

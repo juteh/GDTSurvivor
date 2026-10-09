@@ -8,6 +8,7 @@
 #include "Ship/PlayerSpaceShipPawn.h"
 #include "Game/ShipPlayerState.h"
 #include "Ship/ShipStatsComponent.h"
+#include "UI/SegmentedBar.h"
 #include "Upgrades/UpgradeDefinition.h"
 #include "UI/UpgradeEntryWidget.h"
 
@@ -151,7 +152,14 @@ void UPlayerHUDWidget::HandleScoreChanged(int32 NewScore)
 
 void UPlayerHUDWidget::HandleExperienceChanged(int32 Experience, int32 ExperiencePerLevel, int32 Level)
 {
-	CommonTextBlock_LVL->SetText(FText::Format(LOCTEXT("Level", "LVL: {0}"), Level));
+	if (USegmentedBar* SegmentedBar = Cast<USegmentedBar>(ProgressBar_Experience))
+	{
+		SegmentedBar->SetLabel(FText::Format(LOCTEXT("LevelLabel", "LEVEL {0}"), Level));
+	}
+	if (CommonTextBlock_LVL)
+	{
+		CommonTextBlock_LVL->SetText(FText::Format(LOCTEXT("Level", "LVL: {0}"), Level));
+	}
 	CommonTextBlock_EXP->SetText(FText::Format(LOCTEXT("Experience", "{0}/{1}"), Experience, ExperiencePerLevel));
 	ProgressBar_Experience->SetPercent(ExperiencePerLevel > 0 ? static_cast<float>(Experience) / ExperiencePerLevel : 0.f);
 }

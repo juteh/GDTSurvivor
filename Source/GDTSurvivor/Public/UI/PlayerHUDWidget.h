@@ -51,7 +51,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UTextBlock> CommonTextBlock_Score;
 
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	// Optional: a Segmented Bar as ProgressBar_Experience shows the level in its label instead.
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	TObjectPtr<UTextBlock> CommonTextBlock_LVL;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
