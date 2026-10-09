@@ -18,9 +18,9 @@ enum class EMatchResult : uint8
 };
 
 /**
- * Parent class of BP_SpaceShipPC. Owns everything the local player sees on screen: the HUD, the
- * objective HUD, the tutorial overlay, the pause menu, the level-up selection (queued, pauses the game) and the
- * end-of-match screens. The GameMode only decides *that* a match ended and tells the controllers.
+ * Parent class of BP_SpaceShipPC. Owns everything the local player sees on screen: the HUD (which contains
+ * the objective HUD), the tutorial overlay, the pause menu, the level-up selection (queued, pauses the game) and
+ * the end-of-match screens. The GameMode only decides *that* a match ended and tells the controllers.
  * Also owns the interface input (pause, tutorial, player list), so it keeps working while the player
  * has no ship. Ship controls (move, shoot, weapons) stay on the pawn.
  * See Docs/Architecture.md, section 2.
@@ -75,9 +75,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> HUDClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Screens")
-	TSubclassOf<UUserWidget> ObjectiveHUDClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> TutorialClass;

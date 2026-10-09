@@ -49,13 +49,6 @@ protected:
 	TObjectPtr<UTextBlock> CommonTextBlock_Shield;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UTextBlock> CommonTextBlock_Score;
-
-	// Optional: a Segmented Bar as ProgressBar_Experience shows the level in its label instead.
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
-	TObjectPtr<UTextBlock> CommonTextBlock_LVL;
-
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UTextBlock> CommonTextBlock_EXP;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -85,13 +78,10 @@ private:
 
 	static void ShowResource(UProgressBar* Bar, UTextBlock* Text, float Current, float Max);
 
-	// Player state (score, level, upgrades)
+	// Player state (level, upgrades)
 
 	void BindToPlayerState(AShipPlayerState* PlayerState);
 	void UnbindFromPlayerState();
-
-	UFUNCTION()
-	void HandleScoreChanged(int32 NewScore);
 
 	UFUNCTION()
 	void HandleExperienceChanged(int32 Experience, int32 ExperiencePerLevel, int32 Level);

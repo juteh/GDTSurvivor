@@ -50,5 +50,5 @@ Every objective reacts to `ReportObjectiveEvent` on its own; see [Architecture.m
 | Objective classes | `Content/GDTSurvivor/Core/GameLogic/BP_Objective_*` (parent `AObjective`) |
 | Which objective a level uses | `BP_ObjectiveHandler` actor in the level |
 | Active objective | `AShipGameState::GetActiveObjective` (set by the GameMode in BeginPlay) |
-| HUD text | `UObjectiveHUDWidget` → `WBP_HUD_Objective` (created by `AShipPlayerController`) |
+| HUD text | `UObjectiveHUDWidget` → `WBP_HUD_Objective` (placed inside `WBP_HUD`) |
 | Win check / endless delivery | `BP_GameMode_Base.CheckWinCondition` (`IsComplete`, `StoreProgress`) |

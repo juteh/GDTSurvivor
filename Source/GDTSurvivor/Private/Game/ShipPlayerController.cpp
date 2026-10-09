@@ -44,11 +44,6 @@ void AShipPlayerController::BeginPlay()
 		}
 	}
 
-	if (ObjectiveHUDClass)
-	{
-		// Below the HUD, like before.
-		CreateWidget<UUserWidget>(this, ObjectiveHUDClass)->AddToViewport();
-	}
 	if (HUDClass)
 	{
 		HUDWidget = CreateWidget<UUserWidget>(this, HUDClass);

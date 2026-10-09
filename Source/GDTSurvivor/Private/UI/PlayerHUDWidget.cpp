@@ -125,11 +125,9 @@ void UPlayerHUDWidget::BindToPlayerState(AShipPlayerState* PlayerState)
 	}
 
 	BoundPlayerState = PlayerState;
-	PlayerState->OnScoreChanged.AddUniqueDynamic(this, &UPlayerHUDWidget::HandleScoreChanged);
 	PlayerState->OnExperienceChanged.AddUniqueDynamic(this, &UPlayerHUDWidget::HandleExperienceChanged);
 	PlayerState->OnUpgradesChanged.AddUniqueDynamic(this, &UPlayerHUDWidget::HandleUpgradesChanged);
-
-	HandleScoreChanged(PlayerState->GetScoreAsInt());
+	
 	HandleExperienceChanged(PlayerState->GetExperience(), PlayerState->GetExperiencePerLevel(), PlayerState->GetPlayerLevel());
 	HandleUpgradesChanged();
 }
@@ -138,16 +136,10 @@ void UPlayerHUDWidget::UnbindFromPlayerState()
 {
 	if (AShipPlayerState* PlayerState = BoundPlayerState.Get())
 	{
-		PlayerState->OnScoreChanged.RemoveDynamic(this, &UPlayerHUDWidget::HandleScoreChanged);
 		PlayerState->OnExperienceChanged.RemoveDynamic(this, &UPlayerHUDWidget::HandleExperienceChanged);
 		PlayerState->OnUpgradesChanged.RemoveDynamic(this, &UPlayerHUDWidget::HandleUpgradesChanged);
 	}
 	BoundPlayerState.Reset();
-}
-
-void UPlayerHUDWidget::HandleScoreChanged(int32 NewScore)
-{
-	CommonTextBlock_Score->SetText(FText::AsNumber(NewScore));
 }
 
 void UPlayerHUDWidget::HandleExperienceChanged(int32 Experience, int32 ExperiencePerLevel, int32 Level)
@@ -155,10 +147,6 @@ void UPlayerHUDWidget::HandleExperienceChanged(int32 Experience, int32 Experienc
 	if (USegmentedBar* SegmentedBar = Cast<USegmentedBar>(ProgressBar_Experience))
 	{
 		SegmentedBar->SetLabel(FText::Format(LOCTEXT("LevelLabel", "LEVEL {0}"), Level));
-	}
-	if (CommonTextBlock_LVL)
-	{
-		CommonTextBlock_LVL->SetText(FText::Format(LOCTEXT("Level", "LVL: {0}"), Level));
 	}
 	CommonTextBlock_EXP->SetText(FText::Format(LOCTEXT("Experience", "{0}/{1}"), Experience, ExperiencePerLevel));
 	ProgressBar_Experience->SetPercent(ExperiencePerLevel > 0 ? static_cast<float>(Experience) / ExperiencePerLevel : 0.f);
