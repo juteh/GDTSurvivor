@@ -14,6 +14,8 @@ class UEndlessTileData;
  * recycles tiles that fall out of range, so the map feels infinite (Vampire Survivors style).
  * Tile content comes from designer-made tile maps, baked into UEndlessTileData assets.
  * Tiles are not replicated: each machine builds the same layout locally from Seed.
+ * The server rolls a new Seed on every level start and replicates it, so clients
+ * rebuild their tiles once it arrives.
  * On the server the grid covers all players, on clients only the local one.
  *
  * Place exactly one instance in the level.
@@ -39,9 +41,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Endless|Tiles", meta = (ClampMin = "1"))
 	int32 GridRadius = 2;
 
-	// Same seed = same map. Change it to get a different layout.
+	// Off: every level start rolls a new Seed (written to the log). On: always use Seed,
+	// e.g. to reproduce a layout from the log while debugging.
 	UPROPERTY(EditAnywhere, Category = "Endless|Tiles")
+	bool bUseFixedSeed = false;
+
+	// Same seed = same map: tile choice, tile rotation and mineral asteroids.
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Seed, Category = "Endless|Tiles", meta = (EditCondition = "bUseFixedSeed"))
 	int32 Seed = 1337;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Always placed at tile (0, 0), which is centered on the world origin. Never rotated.
 	UPROPERTY(EditAnywhere, Category = "Endless|Tiles")
@@ -51,9 +60,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Endless|Tiles")
 	TArray<TObjectPtr<UEndlessTileData>> TileSet;
 
-	// Random big mineral rocks on free spots of tiles that allow it (bAllowMineralAsteroids).
+	// How free spots for random mineral asteroids are found. What spawns where is set in the
+	// Mineral Catalog (Project Settings) and per tile (AsteroidPlacement in the tile maps).
 	UPROPERTY(EditAnywhere, Category = "Endless|MineralAsteroids")
-	FMineralAsteroidSpawnSettings MineralAsteroids;
+	FMineralAsteroidPlacementSettings AsteroidPlacement;
 
 	// Shows tile name, coordinate, rotation and a green outline on every tile.
 	UPROPERTY(EditAnywhere, Category = "Endless|Debug")
@@ -80,6 +90,10 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	// Clients: the server's Seed arrived after the grid was built, re-init every active tile.
+	UFUNCTION()
+	void OnRep_Seed();
+
 	FIntPoint WorldToTile(const FVector& WorldLocation) const;
 
 	// Collects the tile coordinates needed around all relevant player pawns.

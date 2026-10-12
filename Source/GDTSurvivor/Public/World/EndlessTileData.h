@@ -2,10 +2,50 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Minerals/MineralCatalog.h"
 #include "EndlessTileData.generated.h"
 
 class UMaterialInterface;
+class UMineralDefinition;
 class UStaticMesh;
+
+// How mineral asteroids get into a tile. Which mineral and size they get is decided by the zone.
+UENUM(BlueprintType)
+enum class EMineralAsteroidPlacement : uint8
+{
+	// No asteroids at all (e.g. the start tile).
+	None,
+	// Only at the spawn markers placed in the tile map.
+	Markers,
+	// Only on random free spots.
+	Random,
+	// Markers first, then random ones on the remaining free spots.
+	MarkersAndRandom
+};
+
+// A spot for a mineral asteroid, placed as AMineralAsteroidSpawnPoint in the tile map.
+USTRUCT()
+struct FEndlessTileAsteroidSlot
+{
+	GENERATED_BODY()
+
+	// Relative to the tile center.
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	FVector Location = FVector::ZeroVector;
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	float Chance = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	EMineralAsteroidSize MinSize = EMineralAsteroidSize::Small;
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	EMineralAsteroidSize MaxSize = EMineralAsteroidSize::Huge;
+
+	// Null = picked by the zone.
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	TObjectPtr<UMineralDefinition> FixedMineral;
+};
 
 // All static meshes of one kind (same mesh, materials and collision) in a tile.
 // Rendered as one instanced component at runtime.
@@ -63,9 +103,24 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Tile")
 	float Weight = 1.0f;
 
-	// Random mineral asteroids may be added to free spots of this tile.
-	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	UPROPERTY(VisibleAnywhere, Category = "Tile|Asteroids")
+	EMineralAsteroidPlacement AsteroidPlacement = EMineralAsteroidPlacement::Random;
+
+	// Number of random asteroids (Random / MarkersAndRandom), picked between Min and Max.
+	UPROPERTY(VisibleAnywhere, Category = "Tile|Asteroids")
+	int32 MinRandomAsteroids = 0;
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile|Asteroids")
+	int32 MaxRandomAsteroids = 2;
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile|Baked")
+	TArray<FEndlessTileAsteroidSlot> AsteroidSlots;
+
+	// Old switch, replaced by AsteroidPlacement. Only read in PostLoad: false becomes None.
+	UPROPERTY()
 	bool bAllowMineralAsteroids = true;
+
+	virtual void PostLoad() override;
 
 	UPROPERTY(VisibleAnywhere, Category = "Tile|Baked")
 	TSoftObjectPtr<UWorld> SourceMap;

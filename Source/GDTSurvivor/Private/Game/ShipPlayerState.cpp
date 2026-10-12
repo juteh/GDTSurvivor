@@ -4,6 +4,8 @@
 #include "GameFramework/Pawn.h"
 #include "Engine/GameInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "Minerals/MineralCatalog.h"
+#include "Minerals/MineralDefinition.h"
 #include "Progression/RunStateSubsystem.h"
 #include "Upgrades/UpgradeCatalog.h"
 #include "Upgrades/UpgradeDefinition.h"
@@ -14,6 +16,8 @@ void AShipPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AShipPlayerState, Experience);
 	DOREPLIFETIME(AShipPlayerState, Level);
 	DOREPLIFETIME(AShipPlayerState, UpgradeStacks);
+	DOREPLIFETIME(AShipPlayerState, CarriedMinerals);
+	DOREPLIFETIME(AShipPlayerState, DeliveredMinerals);
 }
 
 AShipPlayerState* AShipPlayerState::GetShipPlayerState(const AActor* PlayerActor)
@@ -140,4 +144,76 @@ void AShipPlayerState::OnRep_Experience()
 void AShipPlayerState::OnRep_UpgradeStacks()
 {
 	OnUpgradesChanged.Broadcast();
+}
+
+namespace
+{
+	void AddMineralCount(TArray<FMineralCount>& Counts, UMineralDefinition* Mineral, int32 Amount)
+	{
+		if (FMineralCount* Existing = Counts.FindByPredicate([Mineral](const FMineralCount& Entry) { return Entry.Mineral == Mineral; }))
+		{
+			Existing->Count += Amount;
+			return;
+		}
+		FMineralCount& Added = Counts.AddDefaulted_GetRef();
+		Added.Mineral = Mineral;
+		Added.Count = Amount;
+	}
+}
+
+bool AShipPlayerState::CollectMineral(const AActor* MineralActor)
+{
+	if (!HasAuthority() || !MineralActor)
+	{
+		return false;
+	}
+
+	const UMineralCatalog* Catalog = UMineralCatalog::Get();
+	const UMineralDefinition* Mineral = Catalog ? Catalog->FindByMineralClass(MineralActor->GetClass()) : nullptr;
+	if (!Mineral)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CollectMineral: %s is not in the mineral catalog."), *MineralActor->GetClass()->GetName());
+		return false;
+	}
+
+	// Definitions are read-only assets; the count only references them.
+	AddMineralCount(CarriedMinerals, const_cast<UMineralDefinition*>(Mineral), 1);
+	OnMineralsChanged.Broadcast();
+	return true;
+}
+
+int32 AShipPlayerState::DeliverMinerals()
+{
+	if (!HasAuthority() || CarriedMinerals.IsEmpty())
+	{
+		return 0;
+	}
+
+	int32 Delivered = 0;
+	for (const FMineralCount& Carried : CarriedMinerals)
+	{
+		AddMineralCount(DeliveredMinerals, Carried.Mineral, Carried.Count);
+		Delivered += Carried.Count;
+	}
+	CarriedMinerals.Reset();
+	OnMineralsChanged.Broadcast();
+	return Delivered;
+}
+
+int32 AShipPlayerState::GetDeliveredMineralValue() const
+{
+	int32 Value = 0;
+	for (const FMineralCount& Delivered : DeliveredMinerals)
+	{
+		if (Delivered.Mineral)
+		{
+			Value += Delivered.Count * Delivered.Mineral->Value;
+		}
+	}
+	return Value;
+}
+
+void AShipPlayerState::OnRep_Minerals()
+{
+	OnMineralsChanged.Broadcast();
 }

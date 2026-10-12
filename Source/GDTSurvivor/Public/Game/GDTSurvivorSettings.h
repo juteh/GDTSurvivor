@@ -4,6 +4,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "GDTSurvivorSettings.generated.h"
 
+class UMineralCatalog;
 class UUpgradeCatalog;
 class USoundClass;
 class USoundMix;
@@ -17,6 +18,9 @@ class GDTSURVIVOR_API UGDTSurvivorSettings : public UDeveloperSettings
 public:
 	UPROPERTY(Config, EditAnywhere, Category = "Upgrades")
 	TSoftObjectPtr<UUpgradeCatalog> UpgradeCatalog;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Minerals")
+	TSoftObjectPtr<UMineralCatalog> MineralCatalog;
 
 	// Base sound mix of every map; UUserSettingsSubsystem sets the player's volumes in it.
 	UPROPERTY(Config, EditAnywhere, Category = "Audio")

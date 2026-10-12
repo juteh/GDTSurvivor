@@ -132,3 +132,8 @@ hooks/pre-push
 # Claude Code Local Settings    #
 #################################
 .claude/
+
+#################################
+# Python Cache (Tools scripts)  #
+#################################
+__pycache__/

@@ -109,8 +109,8 @@ The stats component calculates every value as **base value + modifiers**. Each m
 | **Must not** | Use `GetPlayerPawn(0)` / `GetPlayerController(0)`; use the actor that actually overlapped/hit/instigated. |
 
 ### Data Assets / DataTables
-Definitions that designers tune: upgrades (stat, value per stack, max stacks, cost, name, icon), enemy types,
-tiles. Code reads them; nobody hardcodes these values in graphs.
+Definitions that designers tune: upgrades (stat, value per stack, max stacks, cost, name, icon), minerals and
+zones, enemy types, tiles. Code reads them; nobody hardcodes these values in graphs.
 
 ---
 
@@ -181,6 +181,24 @@ UpgradeDefinition (Data Asset)          PlayerState                 Pawn: ShipSt
 - This model maps closely to the Gameplay Ability System (AttributeSet + GameplayEffects), which is planned
   for buffs and abilities later.
 
+## 5b. Minerals and zones (target model)
+
+```
+Tile map (designer)                    DA_MineralCatalog (designer)            Tile at runtime (server)
+  AsteroidPlacement: Markers/Random      Minerals: DA_Mineral_* (id, value)      zone = ring by distance
+  MineralAsteroidSpawnPoint markers      Sizes: Small … Huge                     → mineral + size per asteroid
+  Min/Max random asteroids               Zones: rings around the base            → spawns AsteroidClass
+         WHERE / HOW MANY                       WHAT / HOW VALUABLE
+```
+
+- The tile decides **where** asteroids can be, the zone decides **which** mineral and size. No game-design
+  numbers in the spawn code.
+- Zones are rings: straight-line distance from the base tile center to the tile center, so a tile is always
+  in exactly one zone.
+- The value of a mineral only matters in the **evaluation at the end of the level**. During the level, only
+  *which* minerals were delivered is counted.
+- Step-by-step: [Guides/MineralsAndTileAsteroids.md](Guides/MineralsAndTileAsteroids.md).
+
 ---
 
 ## 6. Naming and placement
@@ -197,6 +215,7 @@ UpgradeDefinition (Data Asset)          PlayerState                 Pawn: ShipSt
   | `Combat/` | Projectiles and damage |
   | `Enemies/` | Enemy behaviour, spawning |
   | `Upgrades/` | Upgrade definitions and catalog |
+  | `Minerals/` | Mineral definitions, catalog with sizes and zones |
   | `Progression/` | Meta progression and campaign run: subsystems and their save games |
   | `UserSettings/` | Player settings (audio, graphics): subsystem and its save game |
   | `Objectives/` | Level objectives |

@@ -22,6 +22,8 @@ Responsibilities, communication rules and what is stored where: [Docs/Architectu
 Guides:
 - [Adding an upgrade](Docs/Guides/AddingAnUpgrade.md)
 - [Adding an objective](Docs/Guides/AddingAnObjective.md)
+- [Adding a tile](Docs/Guides/AddingATile.md)
+- [Minerals and tile asteroids](Docs/Guides/MineralsAndTileAsteroids.md)
 
 ## Project Structure
  
@@ -35,6 +37,7 @@ Guides:
  │       ├── Combat/                      # Projectiles
  │       ├── Enemies/                     # Enemy behaviour, wave trigger
  │       ├── Upgrades/                    # Upgrade definitions and catalog
+ │       ├── Minerals/                    # Mineral definitions, zones (catalog)
  │       ├── Progression/                 # Meta progression and campaign run (subsystems + saves)
  │       ├── Objectives/                  # Level objectives
  │       ├── World/                       # Endless map tiles, mineral asteroids

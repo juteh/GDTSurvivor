@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Minerals/MineralDefinition.h"
 #include "ShipPlayerState.generated.h"
 
 class UUpgradeDefinition;
@@ -23,6 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipScoreChanged, int32, NewScore
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnShipExperienceChanged, int32, Experience, int32, ExperiencePerLevel, int32, Level);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShipLevelUp, int32, NewLevel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShipUpgradesChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShipMineralsChanged);
 
 /**
  * Parent class of BP_PlayerStateSpaceShip. Owns what the player has earned in the current run:
@@ -81,6 +83,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerState")
 	TArray<UUpgradeDefinition*> GetLevelUpOptions(int32 Count) const;
 
+	// Minerals: picked up pieces are carried until the player reaches the dropzone, then they count
+	// as delivered. Only which minerals were delivered is counted; their value matters in the
+	// evaluation at the end of the level (see Docs/Architecture.md, section 5b).
+
+	// Server: the player picked up this mineral piece (BP_Mineral_*). False if it is not in the
+	// mineral catalog.
+	UFUNCTION(BlueprintCallable, Category = "PlayerState|Minerals")
+	bool CollectMineral(const AActor* MineralActor);
+
+	// Server: everything carried counts as delivered. Returns the number of delivered pieces.
+	UFUNCTION(BlueprintCallable, Category = "PlayerState|Minerals")
+	int32 DeliverMinerals();
+
+	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
+	const TArray<FMineralCount>& GetCarriedMinerals() const { return CarriedMinerals; }
+
+	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
+	const TArray<FMineralCount>& GetDeliveredMinerals() const { return DeliveredMinerals; }
+
+	// Sum of count * value of all delivered minerals, for the evaluation.
+	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
+	int32 GetDeliveredMineralValue() const;
+
 	// Events
 
 	UPROPERTY(BlueprintAssignable, Category = "PlayerState")
@@ -94,6 +119,10 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "PlayerState")
 	FOnShipUpgradesChanged OnUpgradesChanged;
+
+	// Carried or delivered minerals changed.
+	UPROPERTY(BlueprintAssignable, Category = "PlayerState")
+	FOnShipMineralsChanged OnMineralsChanged;
 
 protected:
 	// Takes the score carried over from the previous campaign level (URunStateSubsystem).
@@ -121,4 +150,13 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_UpgradeStacks)
 	TArray<FUpgradeStack> UpgradeStacks;
+
+	UFUNCTION()
+	void OnRep_Minerals();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Minerals)
+	TArray<FMineralCount> CarriedMinerals;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Minerals)
+	TArray<FMineralCount> DeliveredMinerals;
 };

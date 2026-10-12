@@ -49,7 +49,7 @@ public:
 	TObjectPtr<URotatingMovementComponent> Rotation;
 
 	// Defaults for an asteroid placed by hand (scale 8). Tiles override both per size,
-	// see FMineralAsteroidSpawnSettings::Sizes on the EndlessTileManager.
+	// see the Sizes in the Mineral Catalog.
 	UPROPERTY(EditAnywhere, Category = "Asteroid", meta = (ClampMin = "1"))
 	float MaxHealth = 200.0f;
 

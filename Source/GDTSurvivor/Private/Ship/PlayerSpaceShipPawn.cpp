@@ -455,7 +455,8 @@ void APlayerSpaceShipPawn::HandleProjectileHit_Implementation(AActor* HitActor, 
 				ProjectileActor->Destroy();
 			}
 		}
-		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid"))
+		else if (HitActor->ActorHasTag("level") || HitActor->ActorHasTag("enemy") || HitActor->ActorHasTag("asteroid")
+			|| HitActor->ActorHasTag("breakable"))
 		{
 			ProjectileActor->Destroy();
 		}

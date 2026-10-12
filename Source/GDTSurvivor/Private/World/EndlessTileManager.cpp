@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerController.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 #include "NavigationSystem.h"
+#include "Net/UnrealNetwork.h"
 
 AEndlessTileManager::AEndlessTileManager()
 {
@@ -19,11 +20,28 @@ AEndlessTileManager::AEndlessTileManager()
 	PrimaryActorTick.TickGroup = TG_PostPhysics;
 
 	TileClass = AEndlessTile::StaticClass();
+
+	// Only for the Seed: clients need the server's value to build the same tiles.
+	bReplicates = true;
+	bAlwaysRelevant = true;
+}
+
+void AEndlessTileManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AEndlessTileManager, Seed);
 }
 
 void AEndlessTileManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Must happen before the first RefreshTiles below, which already uses the Seed.
+	if (HasAuthority() && !bUseFixedSeed)
+	{
+		Seed = FMath::Rand();
+	}
+	UE_LOG(LogTemp, Display, TEXT("EndlessTileManager: Seed %d"), Seed);
 
 	if (BackgroundActor && BackgroundActor->GetRootComponent())
 	{
@@ -86,6 +104,21 @@ void AEndlessTileManager::Tick(float DeltaTime)
 
 	UpdateNavBounds();
 	UpdateBackground();
+}
+
+void AEndlessTileManager::OnRep_Seed()
+{
+	UE_LOG(LogTemp, Display, TEXT("EndlessTileManager: Seed %d (from server)"), Seed);
+
+	for (const TPair<FIntPoint, TObjectPtr<AEndlessTile>>& Pair : ActiveTiles)
+	{
+		if (Pair.Value)
+		{
+			int32 RotationSteps = 0;
+			const UEndlessTileData* Data = PickTile(Pair.Key, RotationSteps);
+			Pair.Value->InitTile(Pair.Key, TileSize, Data, RotationSteps, AsteroidPlacement, Seed, bShowTileDebug);
+		}
+	}
 }
 
 FIntPoint AEndlessTileManager::WorldToTile(const FVector& WorldLocation) const
@@ -207,7 +240,7 @@ void AEndlessTileManager::RefreshTiles(const TSet<FIntPoint>& Required)
 		{
 			int32 RotationSteps = 0;
 			const UEndlessTileData* Data = PickTile(TileCoord, RotationSteps);
-			Tile->InitTile(TileCoord, TileSize, Data, RotationSteps, MineralAsteroids, Seed, bShowTileDebug);
+			Tile->InitTile(TileCoord, TileSize, Data, RotationSteps, AsteroidPlacement, Seed, bShowTileDebug);
 			ActiveTiles.Add(TileCoord, Tile);
 		}
 	}

@@ -2,6 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "World/EndlessTileData.h"
+#include "World/MineralAsteroidSpawnPoint.h"
 
 #if WITH_EDITOR
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -34,6 +35,18 @@ AEndlessTileAuthoring::AEndlessTileAuthoring()
 	FreeEdgeBounds->SetLineThickness(15.0f);
 
 	SetActorHiddenInGame(true);
+}
+
+void AEndlessTileAuthoring::PostLoad()
+{
+	Super::PostLoad();
+
+	// Tile maps saved before AsteroidPlacement existed.
+	if (!bAllowMineralAsteroids)
+	{
+		AsteroidPlacement = EMineralAsteroidPlacement::None;
+		bAllowMineralAsteroids = true;
+	}
 }
 
 #if WITH_EDITOR
@@ -82,7 +95,10 @@ void AEndlessTileAuthoring::Bake()
 	Data->TileName = TileName.IsEmpty() ? FPackageName::GetShortName(MapPackage) : TileName;
 	Data->bAllowRotation = bAllowRotation;
 	Data->Weight = Weight;
-	Data->bAllowMineralAsteroids = bAllowMineralAsteroids;
+	Data->AsteroidPlacement = AsteroidPlacement;
+	Data->MinRandomAsteroids = FMath::Min(MinRandomAsteroids, MaxRandomAsteroids);
+	Data->MaxRandomAsteroids = FMath::Max(MinRandomAsteroids, MaxRandomAsteroids);
+	Data->AsteroidSlots.Reset();
 	Data->SourceMap = TSoftObjectPtr<UWorld>(FSoftObjectPath(MapPackage + TEXT(".") + FPackageName::GetShortName(MapPackage)));
 	Data->MeshGroups.Reset();
 	Data->Actors.Reset();
@@ -95,7 +111,28 @@ void AEndlessTileAuthoring::Bake()
 
 	for (AActor* Actor : Level->Actors)
 	{
-		if (!Actor || Actor == this || Actor->IsEditorOnly() || Actor->ActorHasTag(TEXT("NoBake")))
+		if (!Actor || Actor == this || Actor->ActorHasTag(TEXT("NoBake")))
+		{
+			continue;
+		}
+
+		// Editor-only on purpose, so it has to be handled before the editor-only filter below.
+		if (const AMineralAsteroidSpawnPoint* SpawnPoint = Cast<AMineralAsteroidSpawnPoint>(Actor))
+		{
+			FEndlessTileAsteroidSlot& Slot = Data->AsteroidSlots.AddDefaulted_GetRef();
+			Slot.Location = Origin.InverseTransformPosition(SpawnPoint->GetActorLocation());
+			Slot.Chance = SpawnPoint->Chance;
+			Slot.MinSize = SpawnPoint->MinSize;
+			Slot.MaxSize = FMath::Max(SpawnPoint->MinSize, SpawnPoint->MaxSize);
+			Slot.FixedMineral = SpawnPoint->FixedMineral;
+			if (FMath::Abs(Slot.Location.X) > Half || FMath::Abs(Slot.Location.Y) > Half)
+			{
+				OutOfBounds.Add(Actor->GetActorLabel());
+			}
+			continue;
+		}
+
+		if (Actor->IsEditorOnly())
 		{
 			continue;
 		}
@@ -149,7 +186,14 @@ void AEndlessTileAuthoring::Bake()
 	Data->MarkPackageDirty();
 	UEditorLoadingAndSavingUtils::SavePackages({ Data->GetOutermost() }, false);
 
-	FString Message = FString::Printf(TEXT("%s gebacken: %d Meshes, %d Actors"), *Data->TileName, NumMeshes, Data->Actors.Num());
+	FString Message = FString::Printf(TEXT("%s gebacken: %d Meshes, %d Actors, %d Asteroiden-Marker"),
+		*Data->TileName, NumMeshes, Data->Actors.Num(), Data->AsteroidSlots.Num());
+	const bool bUsesMarkers = AsteroidPlacement == EMineralAsteroidPlacement::Markers
+		|| AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom;
+	if (Data->AsteroidSlots.Num() > 0 && !bUsesMarkers)
+	{
+		Message += TEXT("\nHinweis: Asteroid Placement nutzt keine Marker, die Marker werden ignoriert.");
+	}
 	if (OutOfBounds.Num() > 0)
 	{
 		Message += TEXT("\nAusserhalb der Kachel: ") + FString::Join(OutOfBounds, TEXT(", "));

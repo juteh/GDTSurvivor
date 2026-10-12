@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "World/EndlessTileData.h"
 #include "EndlessTileAuthoring.generated.h"
 
 class UBoxComponent;
@@ -14,6 +15,7 @@ class UEndlessTileData;
  * Bake collects everything in the map into a UEndlessTileData asset:
  *  - StaticMeshActors become instanced meshes (blocks, walls, decoration)
  *  - Blueprint actors (minerals, pickups, ...) are spawned at runtime
+ *  - AMineralAsteroidSpawnPoint markers become asteroid slots (used by the Markers placement)
  *  - native engine actors (lights, volumes, PlayerStart, ...) and actors tagged "NoBake" are ignored
  *
  * Editor only, never part of the game.
@@ -38,9 +40,25 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tile", meta = (ClampMin = "0"))
 	float Weight = 1.0f;
 
-	// Random mineral asteroids may be added to free spots of this tile (settings on the EndlessTileManager).
-	UPROPERTY(EditAnywhere, Category = "Tile")
+	// Where mineral asteroids can appear: at the AMineralAsteroidSpawnPoint markers in this map,
+	// on random free spots, or both. Mineral and size come from the zone (Mineral Catalog).
+	UPROPERTY(EditAnywhere, Category = "Tile|Asteroids")
+	EMineralAsteroidPlacement AsteroidPlacement = EMineralAsteroidPlacement::Random;
+
+	// Number of random asteroids, picked between Min and Max per tile.
+	UPROPERTY(EditAnywhere, Category = "Tile|Asteroids", meta = (ClampMin = "0",
+		EditCondition = "AsteroidPlacement == EMineralAsteroidPlacement::Random || AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom"))
+	int32 MinRandomAsteroids = 0;
+
+	UPROPERTY(EditAnywhere, Category = "Tile|Asteroids", meta = (ClampMin = "0",
+		EditCondition = "AsteroidPlacement == EMineralAsteroidPlacement::Random || AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom"))
+	int32 MaxRandomAsteroids = 2;
+
+	// Old switch, replaced by AsteroidPlacement. Only read in PostLoad: false becomes None.
+	UPROPERTY()
 	bool bAllowMineralAsteroids = true;
+
+	virtual void PostLoad() override;
 
 	// Must match TileSize on the EndlessTileManager.
 	UPROPERTY(EditAnywhere, Category = "Tile", meta = (ClampMin = "1000"))

@@ -3,6 +3,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Minerals/MineralCatalog.h"
+#include "Minerals/MineralDefinition.h"
 #include "World/EndlessTileData.h"
 #include "World/MineralAsteroid.h"
 #include "Engine/CollisionProfile.h"
@@ -86,7 +88,7 @@ void AEndlessTile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 void AEndlessTile::InitTile(const FIntPoint& InCoord, float InTileSize, const UEndlessTileData* Data,
-	int32 RotationSteps, const FMineralAsteroidSpawnSettings& AsteroidSettings, int32 Seed, bool bShowDebug)
+	int32 RotationSteps, const FMineralAsteroidPlacementSettings& AsteroidPlacement, int32 Seed, bool bShowDebug)
 {
 	Coord = InCoord;
 
@@ -155,9 +157,9 @@ void AEndlessTile::InitTile(const FIntPoint& InCoord, float InTileSize, const UE
 			}
 		}
 
-		if (Data->bAllowMineralAsteroids)
+		if (Data->AsteroidPlacement != EMineralAsteroidPlacement::None)
 		{
-			SpawnMineralAsteroids(InTileSize, Data, RotationSteps, AsteroidSettings, Seed);
+			SpawnMineralAsteroids(InTileSize, Data, RotationSteps, AsteroidPlacement, Seed);
 		}
 	}
 
@@ -165,9 +167,11 @@ void AEndlessTile::InitTile(const FIntPoint& InCoord, float InTileSize, const UE
 }
 
 void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileData* Data, int32 RotationSteps,
-	const FMineralAsteroidSpawnSettings& Settings, int32 Seed)
+	const FMineralAsteroidPlacementSettings& Settings, int32 Seed)
 {
-	if (Settings.Classes.IsEmpty())
+	const UMineralCatalog* Catalog = UMineralCatalog::Get();
+	const FMineralZone* Zone = Catalog ? Catalog->FindZone(Coord) : nullptr;
+	if (!Zone)
 	{
 		return;
 	}
@@ -175,16 +179,6 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 	// Separate stream from the tile pick, so changing asteroid settings doesn't reshuffle the tiles.
 	constexpr uint32 AsteroidSalt = 0xA57E401Du;
 	FRandomStream Stream(HashCombine(HashCombine(GetTypeHash(Coord), GetTypeHash(Seed)), AsteroidSalt));
-
-	int32 NumAsteroids = 0;
-	while (NumAsteroids < Settings.MaxPerTile && Stream.FRand() < Settings.Chance)
-	{
-		++NumAsteroids;
-	}
-	if (NumAsteroids == 0)
-	{
-		return;
-	}
 
 	// Everything already in the tile as 2D circles (tile-local center, radius).
 	TArray<TPair<FVector2D, float>> Occupied;
@@ -214,19 +208,51 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 		}
 	}
 
-	const float Half = 0.5f * InTileSize;
-	for (int32 AsteroidIndex = 0; AsteroidIndex < NumAsteroids; ++AsteroidIndex)
+	const bool bUseMarkers = Data->AsteroidPlacement == EMineralAsteroidPlacement::Markers
+		|| Data->AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom;
+	const bool bUseRandom = Data->AsteroidPlacement == EMineralAsteroidPlacement::Random
+		|| Data->AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom;
+
+	// Markers: placed by the designer, so no free-spot check, but they block the random ones.
+	if (bUseMarkers)
 	{
-		const TSubclassOf<AMineralAsteroid> AsteroidClass = Settings.Classes[Stream.RandRange(0, Settings.Classes.Num() - 1)];
-		if (!AsteroidClass)
+		for (const FEndlessTileAsteroidSlot& Slot : Data->AsteroidSlots)
+		{
+			if (Stream.FRand() >= Slot.Chance)
+			{
+				continue;
+			}
+			EMineralAsteroidSize Size = EMineralAsteroidSize::Small;
+			const UMineralDefinition* Mineral = Slot.FixedMineral ? Slot.FixedMineral.Get() : Catalog->PickMineral(*Zone, Stream);
+			if (!Mineral || !Catalog->PickSize(*Zone, Slot.MinSize, Slot.MaxSize, Stream, Size))
+			{
+				continue;
+			}
+			const FVector2D Local(TileRotation.TransformPosition(Slot.Location));
+			const float Radius = SpawnMineralAsteroid(*Catalog, *Mineral, Size, Local);
+			if (Radius > 0.0f)
+			{
+				Occupied.Emplace(Local, Radius);
+			}
+		}
+	}
+
+	if (!bUseRandom)
+	{
+		return;
+	}
+
+	const int32 NumRandom = Stream.RandRange(Data->MinRandomAsteroids, FMath::Max(Data->MinRandomAsteroids, Data->MaxRandomAsteroids));
+	const float Half = 0.5f * InTileSize;
+	for (int32 AsteroidIndex = 0; AsteroidIndex < NumRandom; ++AsteroidIndex)
+	{
+		EMineralAsteroidSize Size = EMineralAsteroidSize::Small;
+		const UMineralDefinition* Mineral = Catalog->PickMineral(*Zone, Stream);
+		if (!Mineral || !Catalog->PickSize(*Zone, EMineralAsteroidSize::Small, EMineralAsteroidSize::Huge, Stream, Size))
 		{
 			continue;
 		}
-		const FMineralAsteroidSize* Size = PickAsteroidSize(Settings, Stream);
-		// Without size table: biggest size, matching the class defaults (MaxHealth / MineralCount).
-		const float Scale = Size ? Size->Scale : 8.0f;
-		// Class default radius is for scale 1.
-		const float Radius = AsteroidClass->GetDefaultObject<AMineralAsteroid>()->GetFootprintRadius() * Scale;
+		const float Radius = GetAsteroidRadius(*Catalog, *Mineral, Size);
 		const float Range = Half - Settings.EdgeMargin - Radius;
 		if (Range <= 0.0f)
 		{
@@ -245,16 +271,8 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 				continue;
 			}
 
-			const FTransform SpawnTransform(FRotator::ZeroRotator, FVector(TileCenter + Local, 0.0), FVector(Scale));
-			if (AMineralAsteroid* Asteroid = GetWorld()->SpawnActorDeferred<AMineralAsteroid>(AsteroidClass, SpawnTransform,
-				nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn))
+			if (SpawnMineralAsteroid(*Catalog, *Mineral, Size, Local) > 0.0f)
 			{
-				if (Size)
-				{
-					Asteroid->SetSizeStats(Size->Health, Size->Minerals);
-				}
-				Asteroid->FinishSpawning(SpawnTransform);
-				SpawnedActors.Add(Asteroid);
 				Occupied.Emplace(Local, Radius);
 			}
 			break;
@@ -262,31 +280,37 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 	}
 }
 
-const FMineralAsteroidSize* AEndlessTile::PickAsteroidSize(const FMineralAsteroidSpawnSettings& Settings, FRandomStream& Stream) const
+float AEndlessTile::GetAsteroidRadius(const UMineralCatalog& Catalog, const UMineralDefinition& Mineral, EMineralAsteroidSize Size)
 {
-	// 0 at the base tile, 1 at FarDistanceInTiles and beyond.
-	const float Alpha = FMath::Clamp(FVector2D(Coord).Size() / Settings.FarDistanceInTiles, 0.0f, 1.0f);
+	const FMineralAsteroidSizeStats* Stats = Catalog.Sizes.Find(Size);
+	if (!Mineral.AsteroidClass || !Stats)
+	{
+		return 0.0f;
+	}
+	// Class default radius is for scale 1.
+	return Mineral.AsteroidClass->GetDefaultObject<AMineralAsteroid>()->GetFootprintRadius() * Stats->Scale;
+}
 
-	float TotalWeight = 0.0f;
-	for (const FMineralAsteroidSize& Size : Settings.Sizes)
+float AEndlessTile::SpawnMineralAsteroid(const UMineralCatalog& Catalog, const UMineralDefinition& Mineral,
+	EMineralAsteroidSize Size, const FVector2D& Local)
+{
+	const FMineralAsteroidSizeStats* Stats = Catalog.Sizes.Find(Size);
+	if (!Mineral.AsteroidClass || !Stats)
 	{
-		TotalWeight += FMath::Max(FMath::Lerp(Size.NearWeight, Size.FarWeight, Alpha), 0.0f);
-	}
-	if (TotalWeight <= 0.0f)
-	{
-		return nullptr;
+		return 0.0f;
 	}
 
-	float Roll = Stream.FRandRange(0.0f, TotalWeight);
-	for (const FMineralAsteroidSize& Size : Settings.Sizes)
+	const FTransform SpawnTransform(FRotator::ZeroRotator, FVector(FVector2D(GetActorLocation()) + Local, 0.0), FVector(Stats->Scale));
+	AMineralAsteroid* Asteroid = GetWorld()->SpawnActorDeferred<AMineralAsteroid>(Mineral.AsteroidClass, SpawnTransform,
+		nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!Asteroid)
 	{
-		Roll -= FMath::Max(FMath::Lerp(Size.NearWeight, Size.FarWeight, Alpha), 0.0f);
-		if (Roll <= 0.0f)
-		{
-			return &Size;
-		}
+		return 0.0f;
 	}
-	return &Settings.Sizes.Last();
+	Asteroid->SetSizeStats(Stats->Health, Stats->Minerals);
+	Asteroid->FinishSpawning(SpawnTransform);
+	SpawnedActors.Add(Asteroid);
+	return GetAsteroidRadius(Catalog, Mineral, Size);
 }
 
 UInstancedStaticMeshComponent* AEndlessTile::GetMeshComponent(int32 Index)
@@ -329,8 +353,11 @@ void AEndlessTile::UpdateDebug(float InTileSize, const UEndlessTileData* Data, i
 	}
 
 	const FString Name = Data ? Data->TileName : TEXT("(leer)");
-	DebugText->SetText(FText::FromString(FString::Printf(TEXT("%s<br>%d, %d %d"),
-		*Name, Coord.X, Coord.Y, RotationSteps * 90)));
+	const UMineralCatalog* Catalog = UMineralCatalog::Get();
+	const FMineralZone* Zone = Catalog ? Catalog->FindZone(Coord) : nullptr;
+	const FString ZoneName = Zone ? Zone->DisplayName.ToString() : TEXT("-");
+	DebugText->SetText(FText::FromString(FString::Printf(TEXT("%s<br>%d, %d %d<br>%s"),
+		*Name, Coord.X, Coord.Y, RotationSteps * 90, *ZoneName)));
 
 	if (!DebugBorderMaterial && DebugBaseMaterial)
 	{

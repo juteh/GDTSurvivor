@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Minerals/MineralCatalog.h"
 #include "EndlessTile.generated.h"
 
 class AMineralAsteroid;
@@ -9,76 +10,16 @@ class UEndlessTileData;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
+class UMineralDefinition;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
-// One size class of mineral asteroids.
+// Technical rules for finding free spots for random mineral asteroids (set on the EndlessTileManager).
+// Which mineral and size, and how many per tile, is game design: see the Mineral Catalog and the tile maps.
 USTRUCT(BlueprintType)
-struct FMineralAsteroidSize
+struct FMineralAsteroidPlacementSettings
 {
 	GENERATED_BODY()
-
-	// Actor scale (8 = mesh 8x the small mineral).
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0.1"))
-	float Scale = 8.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "1"))
-	float Health = 200.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0"))
-	int32 Minerals = 5;
-
-	// Relative chance at the base tile ...
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0"))
-	float NearWeight = 1.0f;
-
-	// ... and at FarDistanceInTiles or further. Linearly blended in between.
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0"))
-	float FarWeight = 1.0f;
-};
-
-// How random mineral asteroids are added to tiles (set on the EndlessTileManager).
-USTRUCT(BlueprintType)
-struct FMineralAsteroidSpawnSettings
-{
-	GENERATED_BODY()
-
-	FMineralAsteroidSpawnSettings()
-	{
-		auto AddSize = [this](float Scale, float Health, int32 Minerals, float NearWeight, float FarWeight)
-		{
-			FMineralAsteroidSize& Size = Sizes.AddDefaulted_GetRef();
-			Size.Scale = Scale;
-			Size.Health = Health;
-			Size.Minerals = Minerals;
-			Size.NearWeight = NearWeight;
-			Size.FarWeight = FarWeight;
-		};
-		AddSize(2.0f, 50.0f, 2, 50.0f, 5.0f);
-		AddSize(4.0f, 100.0f, 3, 30.0f, 15.0f);
-		AddSize(6.0f, 150.0f, 4, 15.0f, 30.0f);
-		AddSize(8.0f, 200.0f, 5, 5.0f, 50.0f);
-	}
-
-	// Size classes; the further a tile is from the base, the more FarWeight counts.
-	UPROPERTY(EditAnywhere, Category = "Asteroids")
-	TArray<FMineralAsteroidSize> Sizes;
-
-	// Distance from the base tile (in tiles) at which only FarWeight is used.
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "1"))
-	float FarDistanceInTiles = 10.0f;
-
-	// One is picked at random per asteroid.
-	UPROPERTY(EditAnywhere, Category = "Asteroids")
-	TArray<TSubclassOf<AMineralAsteroid>> Classes;
-
-	// Chance for the first asteroid in a tile. Every further one needs another roll with the
-	// same chance (0.5: 50% one, 25% two, ...).
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0", ClampMax = "1"))
-	float Chance = 0.5f;
-
-	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0"))
-	int32 MaxPerTile = 2;
 
 	// Border strip kept free, like the EdgeMargin in the tile maps.
 	UPROPERTY(EditAnywhere, Category = "Asteroids", meta = (ClampMin = "0"))
@@ -108,9 +49,9 @@ public:
 
 	// Moves the tile to the given grid coordinate (tile (0,0) is centered on the world origin)
 	// and rebuilds it from Data, rotated by RotationSteps * 90 degrees. Data may be null (empty tile).
-	// Asteroid placement is deterministic per coordinate and Seed.
+	// Mineral asteroids are deterministic per coordinate and Seed.
 	void InitTile(const FIntPoint& InCoord, float InTileSize, const UEndlessTileData* Data,
-		int32 RotationSteps, const FMineralAsteroidSpawnSettings& AsteroidSettings, int32 Seed, bool bShowDebug);
+		int32 RotationSteps, const FMineralAsteroidPlacementSettings& AsteroidPlacement, int32 Seed, bool bShowDebug);
 
 	FIntPoint GetCoord() const { return Coord; }
 
@@ -139,12 +80,18 @@ private:
 
 	void DestroySpawnedActors();
 
-	// Adds random mineral asteroids to free spots (server only). Needs meshes and actors placed first.
+	// Adds mineral asteroids at the tile's markers and/or on random free spots, as set in the tile
+	// data; mineral and size come from the zone of this tile (server only). Needs meshes and actors
+	// placed first.
 	void SpawnMineralAsteroids(float InTileSize, const UEndlessTileData* Data, int32 RotationSteps,
-		const FMineralAsteroidSpawnSettings& Settings, int32 Seed);
+		const FMineralAsteroidPlacementSettings& Settings, int32 Seed);
 
-	// Weighted by distance of this tile to the base. Null if no sizes are set (class defaults are used).
-	const FMineralAsteroidSize* PickAsteroidSize(const FMineralAsteroidSpawnSettings& Settings, FRandomStream& Stream) const;
+	// Spawns one asteroid at the tile-local XY location. Returns its footprint radius, or 0 if nothing spawned.
+	float SpawnMineralAsteroid(const UMineralCatalog& Catalog, const UMineralDefinition& Mineral,
+		EMineralAsteroidSize Size, const FVector2D& Local);
+
+	// Footprint radius of the mineral's asteroid at the given size.
+	static float GetAsteroidRadius(const UMineralCatalog& Catalog, const UMineralDefinition& Mineral, EMineralAsteroidSize Size);
 
 	void UpdateDebug(float InTileSize, const UEndlessTileData* Data, int32 RotationSteps, bool bShowDebug);
 
