@@ -19,8 +19,9 @@ namespace
 	// Size of the engine basic shapes (Cube / Plane) in unreal units.
 	constexpr float BasicShapeSize = 100.0f;
 
-	// Debug visuals sit above the usual 700 high blocks (centered on Z = 0).
-	constexpr float DebugHeight = 400.0f;
+	// Debug visuals sit below the usual 700 high blocks (centered on Z = 0), so ships, pickups and walls
+	// are drawn over them; the background plane is much lower.
+	constexpr float DebugHeight = -400.0f;
 }
 
 AEndlessTile::AEndlessTile()
@@ -58,7 +59,7 @@ AEndlessTile::AEndlessTile()
 	DebugText->SetupAttachment(Root);
 	DebugText->SetMobility(EComponentMobility::Movable);
 	// Lying flat, readable from the player camera (looks along +X, so screen-up is +X).
-	DebugText->SetRelativeLocation(FVector(0.0, 0.0, DebugHeight));
+	// Height is set in UpdateDebug.
 	DebugText->SetRelativeRotation(FRotator(90.0, 180.0, 0.0));
 	DebugText->SetHorizontalAlignment(EHTA_Center);
 	DebugText->SetVerticalAlignment(EVRTA_TextCenter);
@@ -170,11 +171,12 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 	const FMineralAsteroidPlacementSettings& Settings, int32 Seed)
 {
 	const UMineralCatalog* Catalog = UMineralCatalog::Get();
-	const FMineralZone* Zone = Catalog ? Catalog->FindZone(Coord) : nullptr;
-	if (!Zone)
+	if (!Catalog)
 	{
 		return;
 	}
+	// May be null (no zones); then only markers with a FixedMineral spawn.
+	const FMineralZone* Zone = Catalog->FindZone(Coord);
 
 	// Separate stream from the tile pick, so changing asteroid settings doesn't reshuffle the tiles.
 	constexpr uint32 AsteroidSalt = 0xA57E401Du;
@@ -213,7 +215,9 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 	const bool bUseRandom = Data->AsteroidPlacement == EMineralAsteroidPlacement::Random
 		|| Data->AsteroidPlacement == EMineralAsteroidPlacement::MarkersAndRandom;
 
-	// Markers: placed by the designer, so no free-spot check, but they block the random ones.
+	// Markers: placed by the designer, so they always win: no free-spot check, and the size comes only
+	// from the marker's range (the zone only picks the mineral, unless FixedMineral is set).
+	// They block the random ones.
 	if (bUseMarkers)
 	{
 		for (const FEndlessTileAsteroidSlot& Slot : Data->AsteroidSlots)
@@ -223,9 +227,12 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 				continue;
 			}
 			EMineralAsteroidSize Size = EMineralAsteroidSize::Small;
-			const UMineralDefinition* Mineral = Slot.FixedMineral ? Slot.FixedMineral.Get() : Catalog->PickMineral(*Zone, Stream);
-			if (!Mineral || !Catalog->PickSize(*Zone, Slot.MinSize, Slot.MaxSize, Stream, Size))
+			const UMineralDefinition* Mineral = Slot.FixedMineral ? Slot.FixedMineral.Get()
+				: Zone ? Catalog->PickMineral(*Zone, Stream) : nullptr;
+			if (!Mineral || !Catalog->PickSizeInRange(Slot.MinSize, Slot.MaxSize, Stream, Size))
 			{
+				UE_LOG(LogTemp, Warning, TEXT("%s: asteroid marker at %s skipped (no mineral in the zone or no size in %d..%d)."),
+					*Data->TileName, *Slot.Location.ToString(), static_cast<int32>(Slot.MinSize), static_cast<int32>(Slot.MaxSize));
 				continue;
 			}
 			const FVector2D Local(TileRotation.TransformPosition(Slot.Location));
@@ -237,7 +244,7 @@ void AEndlessTile::SpawnMineralAsteroids(float InTileSize, const UEndlessTileDat
 		}
 	}
 
-	if (!bUseRandom)
+	if (!bUseRandom || !Zone)
 	{
 		return;
 	}
@@ -351,6 +358,8 @@ void AEndlessTile::UpdateDebug(float InTileSize, const UEndlessTileData* Data, i
 	{
 		return;
 	}
+
+	DebugText->SetRelativeLocation(FVector(0.0, 0.0, DebugHeight));
 
 	const FString Name = Data ? Data->TileName : TEXT("(leer)");
 	const UMineralCatalog* Catalog = UMineralCatalog::Get();

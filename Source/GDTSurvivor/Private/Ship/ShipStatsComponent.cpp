@@ -20,6 +20,20 @@ UShipStatsComponent::UShipStatsComponent()
 	StatValues.Init(0.f, static_cast<int32>(EShipStat::Count));
 }
 
+void UShipStatsComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	// Base values (with Blueprint overrides) as soon as the ship is spawned, so actors that read stats
+	// before our BeginPlay (e.g. pickups spawned by a tile at level start) don't get 0. Health and
+	// shield are filled in BeginPlay, when the maximum is raised from 0.
+	for (int32 Index = 0; Index < static_cast<int32>(EShipStat::Count); ++Index)
+	{
+		const EShipStat Stat = static_cast<EShipStat>(Index);
+		StatValues[Index] = FMath::Max(GetMinValue(Stat), GetBaseValue(Stat));
+	}
+}
+
 void UShipStatsComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

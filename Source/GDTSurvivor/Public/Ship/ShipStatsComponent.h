@@ -135,6 +135,7 @@ public:
 	FOnShipDeath OnDeath;
 
 protected:
+	virtual void OnRegister() override;
 	virtual void BeginPlay() override;
 
 	// Base values, before any modifier.

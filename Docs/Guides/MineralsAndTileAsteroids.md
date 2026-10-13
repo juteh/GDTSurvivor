@@ -8,7 +8,7 @@ Two questions are answered in two different places:
 | Question | Answered by | Where |
 |---|---|---|
 | **Where** can asteroids be in a tile, and how many? | the tile map | `AsteroidPlacement` on the `EndlessTileAuthoring` actor, `MineralAsteroidSpawnPoint` markers |
-| **Which** mineral and size, i.e. how valuable? | the zone of the tile | `DA_MineralCatalog` (Project Settings > Game > GDTSurvivor > Mineral Catalog) |
+| **Which** mineral and size, i.e. how valuable? | the zone of the tile (markers: size from the marker, see A.3) | `DA_MineralCatalog` (Project Settings > Game > GDTSurvivor > Mineral Catalog) |
 
 Zones are rings around the base tile (0, 0). A tile belongs to the zone with the highest `MinDistanceInTiles`
 that is not above the straight-line distance from the base tile center to the tile center. A tile is always
@@ -33,7 +33,7 @@ completely in one zone. The further out, the more valuable minerals and bigger a
    | Field | Meaning |
    |---|---|
    | **Chance** | Chance that an asteroid appears here at all (1 = always). |
-   | **Min Size / Max Size** | Allowed size classes; the zone picks one in this range. |
+   | **Min Size / Max Size** | Size classes for this marker, picked with equal chance. The zone's size weights do **not** apply: a marker set to Huge spawns a huge asteroid in every zone. |
    | **Fixed Mineral** | Optional. Always this mineral, regardless of the zone (e.g. a hidden Iconos in a wreck). |
 
    The cyan circle shows the biggest asteroid that can appear at this marker. Markers are not checked for

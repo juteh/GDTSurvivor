@@ -11,7 +11,8 @@ class USphereComponent;
 /**
  * Marks a spot for a mineral asteroid in a tile map. "Bake" on the EndlessTileAuthoring turns it
  * into an asteroid slot; it is only used if the tile's AsteroidPlacement includes Markers.
- * The zone of the tile picks mineral and size (within MinSize..MaxSize), unless FixedMineral is set.
+ * The marker always wins over the zone: the size is picked only from MinSize..MaxSize (equal chance),
+ * the zone of the tile only picks the mineral, unless FixedMineral is set.
  *
  * The cyan circle shows the biggest asteroid that can appear here. Editor only.
  */

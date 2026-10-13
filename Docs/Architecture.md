@@ -193,6 +193,8 @@ Tile map (designer)                    DA_MineralCatalog (designer)            T
 
 - The tile decides **where** asteroids can be, the zone decides **which** mineral and size. No game-design
   numbers in the spawn code.
+- Markers placed by hand always win over the zone: a marker always spawns, with a size from its own
+  Min/Max range. The zone only picks the mineral (unless the marker has a Fixed Mineral).
 - Zones are rings: straight-line distance from the base tile center to the tile center, so a tile is always
   in exactly one zone.
 - The value of a mineral only matters in the **evaluation at the end of the level**. During the level, only

@@ -112,6 +112,27 @@ bool UMineralCatalog::PickSize(const FMineralZone& Zone, EMineralAsteroidSize Mi
 	return true;
 }
 
+bool UMineralCatalog::PickSizeInRange(EMineralAsteroidSize MinSize, EMineralAsteroidSize MaxSize,
+	FRandomStream& Stream, EMineralAsteroidSize& OutSize) const
+{
+	TArray<EMineralAsteroidSize, TInlineAllocator<4>> Candidates;
+	for (const TPair<EMineralAsteroidSize, FMineralAsteroidSizeStats>& Pair : Sizes)
+	{
+		if (Pair.Key >= MinSize && Pair.Key <= MaxSize)
+		{
+			Candidates.Add(Pair.Key);
+		}
+	}
+	if (Candidates.IsEmpty())
+	{
+		return false;
+	}
+	// Map order is not guaranteed; sort so the same seed always gives the same size.
+	Candidates.Sort();
+	OutSize = Candidates[Stream.RandRange(0, Candidates.Num() - 1)];
+	return true;
+}
+
 const UMineralDefinition* UMineralCatalog::FindById(FName MineralId) const
 {
 	for (const UMineralDefinition* Mineral : Minerals)

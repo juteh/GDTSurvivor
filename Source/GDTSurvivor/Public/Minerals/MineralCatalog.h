@@ -95,6 +95,11 @@ public:
 	bool PickSize(const FMineralZone& Zone, EMineralAsteroidSize MinSize, EMineralAsteroidSize MaxSize,
 		FRandomStream& Stream, EMineralAsteroidSize& OutSize) const;
 
+	// Equal chance for every size in MinSize..MaxSize, ignoring the zone (used by designer markers).
+	// False only if no size in the range is defined in Sizes.
+	bool PickSizeInRange(EMineralAsteroidSize MinSize, EMineralAsteroidSize MaxSize,
+		FRandomStream& Stream, EMineralAsteroidSize& OutSize) const;
+
 	const UMineralDefinition* FindById(FName MineralId) const;
 
 	// The mineral whose asteroid breaks into pieces of this class.
