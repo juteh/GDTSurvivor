@@ -1,4 +1,4 @@
-#include "UI/ManualWidget.h"
+#include "UI/GDTManualWidget.h"
 
 #include "CommonButtonBase.h"
 #include "Components/TextBlock.h"
@@ -7,38 +7,38 @@
 
 #define LOCTEXT_NAMESPACE "ManualWidget"
 
-UManualWidget::UManualWidget(const FObjectInitializer& ObjectInitializer)
+UGDTManualWidget::UGDTManualWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	// Escape / gamepad back closes the manual.
 	bIsBackHandler = true;
 }
 
-void UManualWidget::NativeOnInitialized()
+void UGDTManualWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	Button_Previous->OnClicked().AddUObject(this, &UManualWidget::ShowPreviousPage);
-	Button_Next->OnClicked().AddUObject(this, &UManualWidget::HandleNextClicked);
+	Button_Previous->OnClicked().AddUObject(this, &UGDTManualWidget::ShowPreviousPage);
+	Button_Next->OnClicked().AddUObject(this, &UGDTManualWidget::HandleNextClicked);
 	if (Button_Close)
 	{
-		Button_Close->OnClicked().AddUObject(this, &UManualWidget::DeactivateWidget);
+		Button_Close->OnClicked().AddUObject(this, &UGDTManualWidget::DeactivateWidget);
 	}
 
 	// CommonUI only routes these while the widget is activated.
 	if (!PreviousPageInputAction.IsNull())
 	{
 		RegisterUIActionBinding(FBindUIActionArgs(PreviousPageInputAction, false,
-			FSimpleDelegate::CreateUObject(this, &UManualWidget::ShowPreviousPage)));
+			FSimpleDelegate::CreateUObject(this, &UGDTManualWidget::ShowPreviousPage)));
 	}
 	if (!NextPageInputAction.IsNull())
 	{
 		RegisterUIActionBinding(FBindUIActionArgs(NextPageInputAction, false,
-			FSimpleDelegate::CreateUObject(this, &UManualWidget::ShowNextPage)));
+			FSimpleDelegate::CreateUObject(this, &UGDTManualWidget::ShowNextPage)));
 	}
 }
 
-void UManualWidget::NativeOnActivated()
+void UGDTManualWidget::NativeOnActivated()
 {
 	Super::NativeOnActivated();
 
@@ -46,12 +46,12 @@ void UManualWidget::NativeOnActivated()
 	ShowPage(0);
 }
 
-UWidget* UManualWidget::NativeGetDesiredFocusTarget() const
+UWidget* UGDTManualWidget::NativeGetDesiredFocusTarget() const
 {
 	return Button_Next;
 }
 
-void UManualWidget::ShowPage(int32 PageIndex)
+void UGDTManualWidget::ShowPage(int32 PageIndex)
 {
 	const int32 PageCount = GetPageCount();
 	if (PageCount == 0)
@@ -64,7 +64,7 @@ void UManualWidget::ShowPage(int32 PageIndex)
 	OnPageChanged(GetPageIndex());
 }
 
-void UManualWidget::ShowNextPage()
+void UGDTManualWidget::ShowNextPage()
 {
 	if (GetPageIndex() < GetPageCount() - 1)
 	{
@@ -72,7 +72,7 @@ void UManualWidget::ShowNextPage()
 	}
 }
 
-void UManualWidget::ShowPreviousPage()
+void UGDTManualWidget::ShowPreviousPage()
 {
 	if (GetPageIndex() > 0)
 	{
@@ -80,17 +80,17 @@ void UManualWidget::ShowPreviousPage()
 	}
 }
 
-int32 UManualWidget::GetPageIndex() const
+int32 UGDTManualWidget::GetPageIndex() const
 {
 	return PageSwitcher->GetActiveWidgetIndex();
 }
 
-int32 UManualWidget::GetPageCount() const
+int32 UGDTManualWidget::GetPageCount() const
 {
 	return PageSwitcher->GetNumWidgets();
 }
 
-void UManualWidget::HandleNextClicked()
+void UGDTManualWidget::HandleNextClicked()
 {
 	if (GetPageIndex() >= GetPageCount() - 1)
 	{
@@ -100,7 +100,7 @@ void UManualWidget::HandleNextClicked()
 	ShowNextPage();
 }
 
-void UManualWidget::UpdatePageControls()
+void UGDTManualWidget::UpdatePageControls()
 {
 	const int32 PageIndex = GetPageIndex();
 	const int32 PageCount = GetPageCount();

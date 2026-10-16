@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/WidgetSwitcher.h"
 #include "CommonInputTypeEnum.h"
-#include "InputMethodSwitcher.generated.h"
+#include "GDTInputMethodSwitcher.generated.h"
 
 /**
  * Widget switcher that follows the player's current input device: child 0 is shown while playing with
@@ -12,7 +12,7 @@
  * In the designer, "Active Widget Index" picks the child to preview.
  */
 UCLASS(meta = (DisplayName = "Input Method Switcher"))
-class GDTSURVIVOR_API UInputMethodSwitcher : public UWidgetSwitcher
+class GDTSURVIVOR_API UGDTInputMethodSwitcher : public UWidgetSwitcher
 {
 	GENERATED_BODY()
 

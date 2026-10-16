@@ -1,4 +1,4 @@
-#include "UI/InputMethodSwitcher.h"
+#include "UI/GDTInputMethodSwitcher.h"
 
 #include "CommonInputSubsystem.h"
 
@@ -10,7 +10,7 @@ namespace
 	const int32 GamepadIndex = 1;
 }
 
-TSharedRef<SWidget> UInputMethodSwitcher::RebuildWidget()
+TSharedRef<SWidget> UGDTInputMethodSwitcher::RebuildWidget()
 {
 	TSharedRef<SWidget> Widget = Super::RebuildWidget();
 
@@ -20,7 +20,7 @@ TSharedRef<SWidget> UInputMethodSwitcher::RebuildWidget()
 		{
 			InputSubsystem->OnInputMethodChangedNative.Remove(InputMethodChangedHandle);
 			InputMethodChangedHandle = InputSubsystem->OnInputMethodChangedNative.AddUObject(
-				this, &UInputMethodSwitcher::HandleInputMethodChanged);
+				this, &UGDTInputMethodSwitcher::HandleInputMethodChanged);
 			HandleInputMethodChanged(InputSubsystem->GetCurrentInputType());
 		}
 	}
@@ -28,7 +28,7 @@ TSharedRef<SWidget> UInputMethodSwitcher::RebuildWidget()
 	return Widget;
 }
 
-void UInputMethodSwitcher::ReleaseSlateResources(bool bReleaseChildren)
+void UGDTInputMethodSwitcher::ReleaseSlateResources(bool bReleaseChildren)
 {
 	if (UCommonInputSubsystem* InputSubsystem = UCommonInputSubsystem::Get(GetOwningLocalPlayer()))
 	{
@@ -39,7 +39,7 @@ void UInputMethodSwitcher::ReleaseSlateResources(bool bReleaseChildren)
 	Super::ReleaseSlateResources(bReleaseChildren);
 }
 
-void UInputMethodSwitcher::HandleInputMethodChanged(ECommonInputType InputType)
+void UGDTInputMethodSwitcher::HandleInputMethodChanged(ECommonInputType InputType)
 {
 	const int32 Index = InputType == ECommonInputType::Gamepad ? GamepadIndex : MouseAndKeyboardIndex;
 	if (Index < GetNumWidgets())
@@ -49,7 +49,7 @@ void UInputMethodSwitcher::HandleInputMethodChanged(ECommonInputType InputType)
 }
 
 #if WITH_EDITOR
-const FText UInputMethodSwitcher::GetPaletteCategory()
+const FText UGDTInputMethodSwitcher::GetPaletteCategory()
 {
 	return LOCTEXT("PaletteCategory", "GDTSurvivor");
 }

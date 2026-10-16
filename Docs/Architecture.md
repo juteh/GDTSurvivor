@@ -227,6 +227,11 @@ Tile map (designer)                    DA_MineralCatalog (designer)            T
   New classes go into the folder of their feature; a new feature gets a new folder (on both sides). Do not name a
   folder like an engine include prefix (`Framework/`, `Engine/`, `GameFramework/`, `Components/` …).
 - Comments and names in English. File names without the `A`/`U` prefix (`ShipStatsComponent.h`).
+- Our own C++ classes carry the project prefix `GDT` after Unreal's type prefix, without an underscore:
+  `AGDTWaveTrigger`, `UGDTManualWidget`, file `GDTManualWidget.h`. Like this, a parent class in the Blueprint
+  editor or a type in the code is never mistaken for an engine class. Asset names keep their asset prefix only
+  (`WBP_Manual`, not `WBP_GDT_Manual`). When renaming an existing class, add a `+ClassRedirects` entry under
+  `[CoreRedirects]` in `Config/DefaultEngine.ini`, otherwise its Blueprints lose their parent class.
 - One subsystem or component per topic, named after the topic (`MetaProgressionSubsystem`, `ShipStatsComponent`).
 - Blueprint subclasses of C++ classes keep the `BP_` / `WBP_` prefix and contain no logic beyond tuning and asset references.
 - Events are named `On<What>Changed` / `On<Something>Happened`.
@@ -251,3 +256,6 @@ Known places that do not follow this document yet, in planned order:
 - [ ] **`GetPlayerPawn(0)` in gameplay code** (GameMode, components, pickups). → owner / instigator.
 - [x] **Score lives in `BP_ScoreComponent` on the pawn** → `AShipPlayerState.AddScore`; pickups reward the overlapping player via `GetShipPlayerState(Actor)`.
 - [x] Meta progression in a GameInstance subsystem with its own save slot.
+- [ ] **Most classes have no `GDT` prefix yet** (`UShipStatsComponent`, `AShipPlayerController` …). New classes
+  use it; the existing ones are renamed together in one step with `+ClassRedirects`. Done so far: `AGDTWaveTrigger`,
+  `UGDTSurvivorSettings`, `UGDTManualWidget`, `UGDTInputMethodSwitcher`, `UGDTControlHintRow`.

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
 #include "Engine/DataTable.h"
-#include "ManualWidget.generated.h"
+#include "GDTManualWidget.generated.h"
 
 class UCommonButtonBase;
 class UTextBlock;
@@ -17,12 +17,12 @@ class UWidgetSwitcher;
  * Pushed onto WBP_MainMenuStack's MenuStack, closes with DeactivateWidget (button, Escape or gamepad back).
  */
 UCLASS(Abstract)
-class GDTSURVIVOR_API UManualWidget : public UCommonActivatableWidget
+class GDTSURVIVOR_API UGDTManualWidget : public UCommonActivatableWidget
 {
 	GENERATED_BODY()
 
 public:
-	UManualWidget(const FObjectInitializer& ObjectInitializer);
+	UGDTManualWidget(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "Manual")
 	void ShowPage(int32 PageIndex);
