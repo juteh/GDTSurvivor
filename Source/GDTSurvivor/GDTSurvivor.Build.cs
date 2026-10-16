@@ -14,7 +14,8 @@ public class GDTSurvivor : ModuleRules
 		// private -> only build in .cpp
 		// Slate/SlateCore: self-drawn HUD widgets (UI/SegmentedBar, UI/HUDRing)
 		// GameplayTags: CommonUI action bindings (UI/ManualWidget)
-		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "DeveloperSettings", "Slate", "SlateCore", "GameplayTags" });
+		// CommonInput: current input device (UI/InputMethodSwitcher)
+		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "CommonInput", "DeveloperSettings", "Slate", "SlateCore", "GameplayTags" });
 
 		// Tile baking in EndlessTileAuthoring (editor only)
 		if (Target.bBuildEditor)

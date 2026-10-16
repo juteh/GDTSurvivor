@@ -49,11 +49,6 @@ void AShipPlayerController::BeginPlay()
 		HUDWidget = CreateWidget<UUserWidget>(this, HUDClass);
 		HUDWidget->AddToViewport(OverlayZOrder);
 	}
-	if (TutorialClass)
-	{
-		TutorialWidget = CreateWidget<UUserWidget>(this, TutorialClass);
-		TutorialWidget->AddToViewport(OverlayZOrder);
-	}
 
 	BindToPlayerState();
 }
@@ -73,10 +68,7 @@ void AShipPlayerController::SetupInputComponent()
 	{
 		EnhancedInput->BindAction(PauseAction, ETriggerEvent::Started, this, &AShipPlayerController::ShowPauseMenu);
 	}
-	if (ToggleTutorialAction)
-	{
-		EnhancedInput->BindAction(ToggleTutorialAction, ETriggerEvent::Started, this, &AShipPlayerController::ToggleTutorial);
-	}
+	
 	if (TogglePlayerListAction)
 	{
 		EnhancedInput->BindAction(TogglePlayerListAction, ETriggerEvent::Started, this, &AShipPlayerController::HandleTogglePlayerList);
@@ -155,14 +147,6 @@ void AShipPlayerController::ShowPauseMenu()
 	}
 }
 
-void AShipPlayerController::ToggleTutorial()
-{
-	if (TutorialWidget)
-	{
-		TutorialWidget->SetVisibility(TutorialWidget->IsVisible() ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
-	}
-}
-
 void AShipPlayerController::ClientShowMatchResult_Implementation(EMatchResult Result)
 {
 	TSubclassOf<UUserWidget> ScreenClass;
@@ -182,7 +166,6 @@ void AShipPlayerController::ClientShowMatchResult_Implementation(EMatchResult Re
 	{
 		UWidgetLayoutLibrary::RemoveAllWidgets(this);
 		HUDWidget = nullptr;
-		TutorialWidget = nullptr;
 		LevelUpWidget = nullptr;
 		PendingLevelUps = 0;
 	}

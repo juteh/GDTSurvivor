@@ -19,9 +19,9 @@ enum class EMatchResult : uint8
 
 /**
  * Parent class of BP_SpaceShipPC. Owns everything the local player sees on screen: the HUD (which contains
- * the objective HUD), the tutorial overlay, the pause menu, the level-up selection (queued, pauses the game) and
+ * the objective HUD), the pause menu, the level-up selection (queued, pauses the game) and
  * the end-of-match screens. The GameMode only decides *that* a match ended and tells the controllers.
- * Also owns the interface input (pause, tutorial, player list), so it keeps working while the player
+ * Also owns the interface input (pause, player list), so it keeps working while the player
  * has no ship. Ship controls (move, shoot, weapons) stay on the pawn.
  * See Docs/Architecture.md, section 2.
  */
@@ -40,9 +40,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Screens")
 	void ShowPauseMenu();
-
-	UFUNCTION(BlueprintCallable, Category = "Screens")
-	void ToggleTutorial();
 
 	// Called by the level-up selection after an option was chosen or skipped.
 	UFUNCTION(BlueprintCallable, Category = "Screens")
@@ -68,16 +65,10 @@ protected:
 	TObjectPtr<UInputAction> PauseAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> ToggleTutorialAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> TogglePlayerListAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> HUDClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Screens")
-	TSubclassOf<UUserWidget> TutorialClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> PauseMenuClass;
@@ -94,7 +85,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	TSubclassOf<UUserWidget> ResultBoardClass;
 
-	// Draw order of the always-visible overlays (HUD, tutorial).
+	// Draw order of the always-visible overlays (HUD).
 	UPROPERTY(EditDefaultsOnly, Category = "Screens")
 	int32 OverlayZOrder = 2;
 
@@ -113,9 +104,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UUserWidget> HUDWidget;
-
-	UPROPERTY()
-	TObjectPtr<UUserWidget> TutorialWidget;
+	
 
 	UPROPERTY()
 	TObjectPtr<UUserWidget> LevelUpWidget;
