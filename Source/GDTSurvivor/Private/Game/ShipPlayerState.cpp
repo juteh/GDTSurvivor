@@ -200,6 +200,12 @@ int32 AShipPlayerState::DeliverMinerals()
 	return Delivered;
 }
 
+int32 AShipPlayerState::GetDeliveredMineralCount(const UMineralDefinition* Mineral) const
+{
+	const FMineralCount* Delivered = DeliveredMinerals.FindByPredicate([Mineral](const FMineralCount& Entry) { return Entry.Mineral == Mineral; });
+	return Delivered ? Delivered->Count : 0;
+}
+
 int32 AShipPlayerState::GetDeliveredMineralValue() const
 {
 	int32 Value = 0;

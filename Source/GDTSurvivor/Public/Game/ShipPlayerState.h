@@ -102,6 +102,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
 	const TArray<FMineralCount>& GetDeliveredMinerals() const { return DeliveredMinerals; }
 
+	// Delivered pieces of one mineral, 0 if it was never delivered.
+	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
+	int32 GetDeliveredMineralCount(const UMineralDefinition* Mineral) const;
+
 	// Sum of count * value of all delivered minerals, for the evaluation.
 	UFUNCTION(BlueprintPure, Category = "PlayerState|Minerals")
 	int32 GetDeliveredMineralValue() const;
