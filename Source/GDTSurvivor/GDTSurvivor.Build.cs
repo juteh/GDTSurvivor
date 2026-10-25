@@ -15,7 +15,8 @@ public class GDTSurvivor : ModuleRules
 		// Slate/SlateCore: self-drawn HUD widgets (UI/SegmentedBar, UI/HUDRing)
 		// GameplayTags: CommonUI action bindings (UI/GDTManualWidget)
 		// CommonInput: current input device (UI/GDTInputMethodSwitcher)
-		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "CommonInput", "DeveloperSettings", "Slate", "SlateCore", "GameplayTags" });
+		// MoviePlayer: loading screen during map loads (UI/GDTLoadingScreenSubsystem)
+		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "CommonUI", "CommonInput", "DeveloperSettings", "Slate", "SlateCore", "GameplayTags", "MoviePlayer" });
 
 		// Tile baking in EndlessTileAuthoring (editor only)
 		if (Target.bBuildEditor)

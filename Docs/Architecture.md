@@ -71,6 +71,16 @@ Use one **subsystem per topic** (e.g. `UMetaProgressionSubsystem`) instead of gr
 | **May** | Create widgets. Send the player's choices to the server (Server RPCs, e.g. "picked level-up option X"). |
 | **Must not** | Contain gameplay rules or stat values. |
 
+Menu maps (`Main_Menu`, `Ship_Menu`) use `AGDTMenuPlayerController`: the map's GameMode override picks a Blueprint
+subclass (`PC_Player`, `PC_ShipMenu`), and that subclass only sets `MenuWidgetClass`, the menu stack opened at
+begin play.
+
+### Loading screen
+`UGDTLoadingScreenSubsystem` (GameInstance subsystem) shows the loading screen on every map change through the
+engine's movie player. Nobody else shows a loading screen; menus just call `OpenLevel`. The widget and minimum
+display time are set in Project Settings > Game > GDTSurvivor > Loading. It does not show in PIE, only in
+Standalone and packaged builds.
+
 ### PlayerState
 *Exists on server and all clients, replicated. Survives the pawn (death, respawn).*
 
